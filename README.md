@@ -37,10 +37,12 @@ sh scripts/setup.sh
 cat backend/.env
 ```
 
-安装脚本默认使用全局 Python（macOS 优先使用 Homebrew Python）和腾讯云 HTTP PyPI 镜像，以兼容旧 Python 的 SSL 环境。`greenlet` 固定使用二进制 wheel，不要求服务器安装 C++ 编译器。需要指定已有 Python 环境或其他镜像时：
+安装脚本默认使用全局 Python（macOS 优先使用 Homebrew Python），并优先寻找当前 Conda 环境或 `miniconda3/bin` 中的 Node.js，再使用腾讯云 HTTP PyPI 镜像。`greenlet` 固定使用二进制 wheel，不要求服务器安装 C++ 编译器。需要指定已有 Python、Node 或其他镜像时：
 
 ```bash
 PYTHON_BIN=/path/to/python \
+NODE_BIN=/path/to/node \
+NPM_BIN=/path/to/npm \
 PYPI_INDEX_URL=http://mirrors.cloud.tencent.com/pypi/simple/ \
 PYPI_TRUSTED_HOST=mirrors.cloud.tencent.com \
 sh scripts/setup.sh

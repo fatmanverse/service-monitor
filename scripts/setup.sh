@@ -3,26 +3,54 @@ set -eu
 
 ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 
-if ! command -v node >/dev/null 2>&1 || ! command -v npm >/dev/null 2>&1; then
+if [ -z "${NODE_BIN:-}" ]; then
+    if [ -n "${CONDA_PREFIX:-}" ] && [ -x "$CONDA_PREFIX/bin/node" ]; then
+        NODE_BIN="$CONDA_PREFIX/bin/node"
+    elif [ -x "$HOME/miniconda3/bin/node" ]; then
+        NODE_BIN="$HOME/miniconda3/bin/node"
+    elif [ -x /root/miniconda3/bin/node ]; then
+        NODE_BIN=/root/miniconda3/bin/node
+    elif command -v node >/dev/null 2>&1; then
+        NODE_BIN=$(command -v node)
+    else
+        NODE_BIN=''
+    fi
+fi
+if [ -z "${NPM_BIN:-}" ]; then
+    if [ -n "${CONDA_PREFIX:-}" ] && [ -x "$CONDA_PREFIX/bin/npm" ]; then
+        NPM_BIN="$CONDA_PREFIX/bin/npm"
+    elif [ -x "$(dirname "$NODE_BIN")/npm" ]; then
+        NPM_BIN="$(dirname "$NODE_BIN")/npm"
+    elif command -v npm >/dev/null 2>&1; then
+        NPM_BIN=$(command -v npm)
+    else
+        NPM_BIN=''
+    fi
+fi
+if [ -z "$NODE_BIN" ] || [ -z "$NPM_BIN" ]; then
     printf '未找到 Node.js/npm。前端构建要求 Node.js 20.19+ 或 22.12+。\n' >&2
     exit 1
 fi
-if ! NODE_VERSION=$(node -p 'process.versions.node' 2>&1); then
+PATH="$(dirname "$NODE_BIN"):$PATH"
+export PATH
+if ! NODE_VERSION=$("$NODE_BIN" -p 'process.versions.node' 2>&1); then
     printf 'Node.js 可执行文件无法在当前系统运行：\n%s\n' "$NODE_VERSION" >&2
     printf '%s\n' '旧版 Linux 请勿使用 NVM 官方二进制，可执行: nvm deactivate && conda install -n base -c conda-forge "nodejs>=20.19,<21"' >&2
     exit 1
 fi
 printf '使用 Node.js: %s\n' "$NODE_VERSION"
-if ! node -e 'var v = process.versions.node.split(".").map(Number); var ok = (v[0] === 20 && v[1] >= 19) || (v[0] === 22 && v[1] >= 12) || v[0] > 22; process.exit(ok ? 0 : 1)'; then
+printf 'Node.js 路径: %s\n' "$NODE_BIN"
+if ! "$NODE_BIN" -e 'var v = process.versions.node.split(".").map(Number); var ok = (v[0] === 20 && v[1] >= 19) || (v[0] === 22 && v[1] >= 12) || v[0] > 22; process.exit(ok ? 0 : 1)'; then
     printf 'Node.js %s 不受支持。请升级到 Node.js 20.19+ 或 22.12+。\n' "$NODE_VERSION" >&2
     printf '%s\n' 'Conda 环境可执行: conda install -c conda-forge "nodejs>=20.19,<21"' >&2
     exit 1
 fi
-if ! NPM_VERSION=$(npm --version 2>&1); then
+if ! NPM_VERSION=$("$NPM_BIN" --version 2>&1); then
     printf 'npm 无法运行：\n%s\n' "$NPM_VERSION" >&2
     exit 1
 fi
 printf '使用 npm: %s\n' "$NPM_VERSION"
+printf 'npm 路径: %s\n' "$NPM_BIN"
 
 if [ -z "${PYTHON_BIN:-}" ]; then
     if [ -x /opt/homebrew/bin/python3 ]; then
@@ -73,7 +101,7 @@ printf '信任 PyPI 主机: %s\n' "$PYPI_TRUSTED_HOST"
     --trusted-host "$PYPI_TRUSTED_HOST" \
     -r "$ROOT_DIR/backend/requirements.txt"
 
-npm --prefix "$ROOT_DIR/frontend" install
-npm --prefix "$ROOT_DIR/frontend" run build
+"$NPM_BIN" --prefix "$ROOT_DIR/frontend" install
+"$NPM_BIN" --prefix "$ROOT_DIR/frontend" run build
 
 printf '%s\n' "安装完成。执行 sh scripts/start.sh 启动服务。"
