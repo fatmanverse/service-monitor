@@ -1,7 +1,7 @@
 import json
 
-from .models import Service, ServiceProbe
-from .schemas import AlertConfigReference, ServiceOutput, ServiceProbeOutput
+from .models import Host, Service, ServiceProbe
+from .schemas import AlertConfigReference, HostOutput, ServiceOutput, ServiceProbeOutput
 
 
 def probe_output(probe: ServiceProbe) -> ServiceProbeOutput:
@@ -50,4 +50,27 @@ def service_output(service: Service) -> ServiceOutput:
         last_response_ms=service.last_response_ms,
         next_check_at=service.next_check_at,
         created_at=service.created_at,
+    )
+
+
+def host_output(host: Host) -> HostOutput:
+    return HostOutput(
+        id=host.id,
+        name=host.name,
+        hostname=host.hostname,
+        port=host.port,
+        username=host.username,
+        auth_type=host.auth_type,
+        private_key_path=host.private_key_path,
+        check_interval=host.check_interval,
+        enabled=host.enabled,
+        alert_configs=[
+            AlertConfigReference(id=config.id, name=config.name, enabled=config.enabled)
+            for config in host.alert_configs
+        ],
+        status=host.status,
+        last_checked_at=host.last_checked_at,
+        last_error=host.last_error,
+        next_check_at=host.next_check_at,
+        created_at=host.created_at,
     )

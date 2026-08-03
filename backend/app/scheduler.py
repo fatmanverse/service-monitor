@@ -43,11 +43,27 @@ class MonitorScheduler:
             host_ids = db.scalars(
                 select(Host.id).where(Host.enabled.is_(True), Host.next_check_at <= now).limit(200)
             ).all()
+        self._wait_for(
+            [self.executor.submit(self._check_host, host_id) for host_id in host_ids]
+        )
+
+        with self.database.session_factory() as db:
             service_ids = db.scalars(
-                select(Service.id).where(Service.enabled.is_(True), Service.next_check_at <= now).limit(1000)
+                select(Service.id)
+                .join(Host, Host.id == Service.host_id)
+                .where(
+                    Service.enabled.is_(True),
+                    Service.next_check_at <= now,
+                    Host.status != "offline",
+                )
+                .limit(1000)
             ).all()
-        futures = [self.executor.submit(self._check_host, host_id) for host_id in host_ids]
-        futures.extend(self.executor.submit(self._check_service, service_id) for service_id in service_ids)
+        self._wait_for(
+            [self.executor.submit(self._check_service, service_id) for service_id in service_ids]
+        )
+
+    @staticmethod
+    def _wait_for(futures) -> None:
         for future in as_completed(futures):
             try:
                 future.result()
@@ -63,12 +79,12 @@ class MonitorScheduler:
     def _check_service(self, service_id: int) -> None:
         with self.database.session_factory() as db:
             service = db.scalar(
-                        select(Service)
-                        .options(
-                            joinedload(Service.host),
-                            selectinload(Service.probes),
-                            selectinload(Service.alert_configs),
-                        )
+                select(Service)
+                .options(
+                    joinedload(Service.host),
+                    selectinload(Service.probes),
+                    selectinload(Service.alert_configs),
+                )
                 .where(Service.id == service_id)
             )
             if service and service.enabled:

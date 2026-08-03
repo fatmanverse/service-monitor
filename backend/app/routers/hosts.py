@@ -3,12 +3,14 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from ..dependencies import get_cipher, get_db, get_monitor, require_admin
+from ..alert_targets import resolve_alert_configs
 from ..models import Host, User
 from ..monitoring import MonitoringService
 from ..schemas import HostCreate, HostOutput, HostUpdate, ProbeResultOutput
+from ..serializers import host_output
 from ..security import SecretCipher
 from ..validation import validate_host_auth
 
@@ -18,7 +20,10 @@ router = APIRouter(prefix="/hosts", tags=["主机"])
 
 @router.get("", response_model=List[HostOutput])
 def list_hosts(db: Session = Depends(get_db), _admin: User = Depends(require_admin)):
-    return db.scalars(select(Host).order_by(Host.name)).all()
+    hosts = db.scalars(
+        select(Host).options(selectinload(Host.alert_configs)).order_by(Host.name)
+    ).all()
+    return [host_output(host) for host in hosts]
 
 
 @router.post("", response_model=HostOutput, status_code=status.HTTP_201_CREATED)
@@ -52,9 +57,12 @@ def create_host(
     else:
         host.password_encrypted = None
     validate_host_auth(host.auth_type, host.password_encrypted, host.private_key_path)
+    host.alert_configs = resolve_alert_configs(db, payload.alert_config_ids)
     db.commit()
-    db.refresh(host)
-    return host
+    host = db.scalar(
+        select(Host).options(selectinload(Host.alert_configs)).where(Host.id == host.id)
+    )
+    return host_output(host)
 
 
 @router.put("/{host_id}", response_model=HostOutput)
@@ -68,7 +76,7 @@ def update_host(
     host = db.get(Host, host_id)
     if not host:
         raise HTTPException(status_code=404, detail="主机不存在")
-    values = payload.model_dump(exclude_unset=True)
+    values = payload.model_dump(exclude_unset=True, exclude={"alert_config_ids"})
     password = values.pop("password", None)
     for key, value in values.items():
         setattr(host, key, value)
@@ -79,13 +87,15 @@ def update_host(
     else:
         host.password_encrypted = None
     validate_host_auth(host.auth_type, host.password_encrypted, host.private_key_path)
+    if payload.alert_config_ids is not None:
+        host.alert_configs = resolve_alert_configs(db, payload.alert_config_ids)
     try:
         db.commit()
     except IntegrityError:
         db.rollback()
         raise HTTPException(status_code=409, detail="主机名称已存在")
-    db.refresh(host)
-    return host
+    host = db.scalar(select(Host).options(selectinload(Host.alert_configs)).where(Host.id == host_id))
+    return host_output(host)
 
 
 @router.delete("/{host_id}", status_code=status.HTTP_204_NO_CONTENT)

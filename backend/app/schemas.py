@@ -66,6 +66,12 @@ class ResourceGroupOutput(BaseModel):
     created_at: datetime
 
 
+class AlertConfigReference(BaseModel):
+    id: int
+    name: str
+    enabled: bool
+
+
 class HostBase(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     hostname: str = Field(min_length=1, max_length=255)
@@ -76,6 +82,7 @@ class HostBase(BaseModel):
     private_key_path: Optional[str] = Field(default=None, max_length=500)
     check_interval: int = Field(default=60, ge=60, le=86400)
     enabled: bool = True
+    alert_config_ids: List[int] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validate_auth(self):
@@ -100,6 +107,7 @@ class HostUpdate(BaseModel):
     private_key_path: Optional[str] = Field(default=None, max_length=500)
     check_interval: Optional[int] = Field(default=None, ge=60, le=86400)
     enabled: Optional[bool] = None
+    alert_config_ids: Optional[List[int]] = None
 
 
 class HostOutput(BaseModel):
@@ -114,6 +122,7 @@ class HostOutput(BaseModel):
     private_key_path: Optional[str]
     check_interval: int
     enabled: bool
+    alert_configs: List[AlertConfigReference] = Field(default_factory=list)
     status: str
     last_checked_at: Optional[datetime]
     last_error: Optional[str]
@@ -206,12 +215,6 @@ class ServiceUpdate(BaseModel):
     alert_config_ids: Optional[List[int]] = None
 
 
-class AlertConfigReference(BaseModel):
-    id: int
-    name: str
-    enabled: bool
-
-
 class ServiceOutput(BaseModel):
     id: int
     host_id: int
@@ -277,6 +280,7 @@ class AlertConfigOutput(BaseModel):
     enabled: bool
     webhook_configured: bool
     service_count: int
+    host_count: int
     created_at: datetime
     updated_at: datetime
 

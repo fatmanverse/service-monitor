@@ -24,7 +24,7 @@
 
 - 主机探活通过建立 SSH 连接确认可达性。
 - 每个服务包含一个或多个进程、GET、POST 探活项。
-- 进程探活通过 SSH 执行 `pgrep -f`，匹配内容作为参数传入，避免拼接命令注入。
+- 进程探活通过 SSH 执行 `pgrep -f`；匹配内容为 `systemctl status <unit>` 或 `systemctl is-active <unit>` 时改用 systemd 活跃状态检查，unit 只允许安全字符。
 - HTTP 探活支持 GET/POST、Headers JSON、JSON Body、Basic 和 Bearer 认证。
 - 在线规则保存为递归 JSON 表达式树，支持任意嵌套 `AND` / `OR`；叶子引用探活项稳定键。
 - 每个启用探活项必须在规则中且只能出现一次；规则结果为真时服务在线。

@@ -9,6 +9,8 @@
 - Regression coverage added to reject an explicitly empty health rule during service updates instead of falling back to the stored rule.
 - Multi-alert API regression coverage added for selecting two robots, reporting service counts, deleting one target, and rejecting unknown alert IDs.
 - Frontend service form now selects multiple alert targets; alert management now owns alert configuration CRUD and per-target tests.
+- Host create/edit now selects multiple alert targets; host offline and recovery transitions notify every enabled target.
+- Scheduler completes due host checks before selecting service work; offline hosts are excluded, and the monitoring guard preserves service state without probing, restart, log, or service alert side effects.
 - `python3 -m pytest tests/test_api.py -q`: not run because the current Python environment has no `pytest`, SQLAlchemy, FastAPI, or Pydantic installed.
 - Official `npm run typecheck` / build: not run because project dependencies are not installed; the offline check does not validate Vite bundling or the exact React 19 declaration package.
 - SQLite migration smoke test: not run because SQLAlchemy is unavailable; static review confirms the migration marker short-circuits repeated completed runs and the data conversion commits atomically.

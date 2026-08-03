@@ -18,6 +18,7 @@ export interface Host {
   private_key_path?: string | null
   check_interval: number
   enabled: boolean
+  alert_configs: AlertConfigReference[]
   status: Status
   last_checked_at?: string | null
   last_error?: string | null
@@ -95,6 +96,7 @@ export interface AlertConfig {
   enabled: boolean
   webhook_configured: boolean
   service_count: number
+  host_count: number
   created_at: string
   updated_at: string
 }

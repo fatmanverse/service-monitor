@@ -56,6 +56,8 @@ export const api = {
   hosts: () => request<Host[]>('/hosts'),
   createHost: (payload: object) =>
     request<Host>('/hosts', { method: 'POST', body: JSON.stringify(payload) }),
+  updateHost: (id: number, payload: object) =>
+    request<Host>(`/hosts/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
   deleteHost: (id: number) => request<void>(`/hosts/${id}`, { method: 'DELETE' }),
   probeHost: (id: number) => request<ProbeResult>(`/hosts/${id}/probe`, { method: 'POST' }),
   resourceGroups: () => request<ResourceGroup[]>('/resource-groups'),

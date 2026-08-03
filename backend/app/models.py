@@ -36,6 +36,15 @@ class ServiceAlertConfig(Base):
     )
 
 
+class HostAlertConfig(Base):
+    __tablename__ = "host_alert_configs"
+
+    host_id: Mapped[int] = mapped_column(ForeignKey("hosts.id", ondelete="CASCADE"), primary_key=True)
+    alert_config_id: Mapped[int] = mapped_column(
+        ForeignKey("alert_configs.id", ondelete="CASCADE"), primary_key=True
+    )
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -86,6 +95,9 @@ class Host(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
     services: Mapped[List["Service"]] = relationship(
         back_populates="host", cascade="all, delete-orphan", passive_deletes=True
+    )
+    alert_configs: Mapped[List["AlertConfig"]] = relationship(
+        secondary="host_alert_configs", back_populates="hosts", passive_deletes=True
     )
 
 
@@ -187,6 +199,9 @@ class AlertConfig(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
     services: Mapped[List[Service]] = relationship(
         secondary="service_alert_configs", back_populates="alert_configs", passive_deletes=True
+    )
+    hosts: Mapped[List[Host]] = relationship(
+        secondary="host_alert_configs", back_populates="alert_configs", passive_deletes=True
     )
 
 

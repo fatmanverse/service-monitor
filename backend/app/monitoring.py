@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 import shlex
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -18,6 +19,7 @@ from .security import SecretCipher
 
 
 logger = logging.getLogger(__name__)
+SYSTEMD_UNIT_PATTERN = re.compile(r"^[A-Za-z0-9@_.:-]+$")
 
 
 @dataclass
@@ -75,7 +77,9 @@ class MonitoringService:
 
     def _check_host_locked(self, db: Session, host: Host) -> ProbeResult:
         db.refresh(host)
+        host.alert_configs
         db.commit()
+        previous_status = host.status
         started = time.monotonic()
         try:
             client = self._connect_ssh(host)
@@ -89,6 +93,15 @@ class MonitoringService:
         host.last_error = None if result.success else result.message
         host.next_check_at = now + timedelta(seconds=host.check_interval)
         db.commit()
+        active_alerts = [config for config in host.alert_configs if config.enabled]
+        should_alert = (
+            (not result.success and previous_status != "offline")
+            or (result.success and previous_status == "offline")
+        )
+        if active_alerts and should_alert:
+            alert_result = self._send_host_status_alert(active_alerts, host, previous_status, result)
+            if not alert_result.success:
+                logger.error("Feishu host alert delivery failed for host %s: %s", host.id, alert_result.message)
         return result
 
     def check_service(self, db: Session, service: Service, allow_restart: bool = True) -> ProbeResult:
@@ -100,8 +113,13 @@ class MonitoringService:
     ) -> ProbeResult:
         db.refresh(service)
         service.host
+        db.refresh(service.host)
         service.probes
         service.alert_configs
+        if service.host.status == "offline":
+            service.next_check_at = datetime.utcnow() + timedelta(seconds=service.check_interval)
+            db.commit()
+            return ProbeResult(False, "节点离线，已暂停服务探活")
         db.commit()
         previous_status = service.status
         result = self._run_service_probes(service)
@@ -153,6 +171,10 @@ class MonitoringService:
 
     def restart_and_check(self, db: Session, service: Service) -> ProbeResult:
         with self._entity_lock(self._service_locks, service.id):
+            service.host
+            db.refresh(service.host)
+            if service.host.status == "offline":
+                return ProbeResult(False, "节点离线，已暂停服务启动与探活")
             restart_result = self._restart_service_locked(service)
             if not restart_result.success:
                 return restart_result
@@ -216,17 +238,32 @@ class MonitoringService:
         started = time.monotonic()
         try:
             client = self._connect_ssh(host)
-            command = f"pgrep -f -- {shlex.quote(probe.process_pattern or '')} >/dev/null"
+            systemd_unit = self._systemd_unit(probe.process_pattern or "")
+            command = (
+                f"systemctl is-active --quiet -- {shlex.quote(systemd_unit)}"
+                if systemd_unit
+                else f"pgrep -f -- {shlex.quote(probe.process_pattern or '')} >/dev/null"
+            )
             _stdin, stdout, stderr = client.exec_command(command, timeout=probe.timeout_seconds)
             exit_code = stdout.channel.recv_exit_status()
             error = stderr.read().decode().strip()
             client.close()
             elapsed = int((time.monotonic() - started) * 1000)
             if exit_code == 0:
-                return ProbeResult(True, "进程存在", elapsed)
-            return ProbeResult(False, error or "未找到匹配进程", elapsed)
+                return ProbeResult(True, f"systemd 服务 {systemd_unit} 在线" if systemd_unit else "进程存在", elapsed)
+            return ProbeResult(False, error or (f"systemd 服务 {systemd_unit} 未运行" if systemd_unit else "未找到匹配进程"), elapsed)
         except Exception as exc:
             return ProbeResult(False, str(exc), int((time.monotonic() - started) * 1000))
+
+    @staticmethod
+    def _systemd_unit(pattern: str) -> Optional[str]:
+        try:
+            parts = shlex.split(pattern.strip())
+        except ValueError:
+            return None
+        if len(parts) != 3 or parts[0] != "systemctl" or parts[1] not in {"status", "is-active"}:
+            return None
+        return parts[2] if SYSTEMD_UNIT_PATTERN.fullmatch(parts[2]) else None
 
     def _probe_http(self, probe: ServiceProbe) -> ProbeResult:
         headers = json.loads(probe.headers_json or "{}")
@@ -267,6 +304,22 @@ class MonitoringService:
             f"状态：{previous_status} -> {result.status}\n"
             f"详情：{result.message}"
         )
+        return self._send_alerts(configs, text)
+
+    def _send_host_status_alert(
+        self, configs: list, host: Host, previous_status: str, result: ProbeResult
+    ) -> ProbeResult:
+        event = "节点恢复在线" if result.success else "节点离线"
+        text = (
+            f"{event}\n"
+            f"节点：{host.name}\n"
+            f"地址：{host.hostname}:{host.port}\n"
+            f"状态：{previous_status} -> {result.status}\n"
+            f"详情：{result.message}"
+        )
+        return self._send_alerts(configs, text)
+
+    def _send_alerts(self, configs: list, text: str) -> ProbeResult:
         failures = []
         response_times = []
         for config in configs:

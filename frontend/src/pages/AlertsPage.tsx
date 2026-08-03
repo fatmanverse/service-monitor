@@ -99,7 +99,7 @@ export function AlertsPage() {
           </header>
           <dl>
             <div><dt>状态</dt><dd>{config.enabled ? '启用' : '停用'}</dd></div>
-            <div><dt>关联服务</dt><dd>{config.service_count}</dd></div>
+            <div><dt>关联目标</dt><dd>{config.host_count} 节点 / {config.service_count} 服务</dd></div>
           </dl>
           <footer>
             <button className="ghost-button" disabled={busyId === config.id || !config.webhook_configured} onClick={() => test(config)}><Send size={16} />测试</button>

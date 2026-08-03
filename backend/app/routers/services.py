@@ -7,8 +7,9 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload, selectinload
 
 from ..dependencies import get_cipher, get_current_user, get_db, get_monitor, require_admin
+from ..alert_targets import resolve_alert_configs
 from ..health_rules import HealthRuleError, validate_rule
-from ..models import AlertConfig, Host, ProbeLog, ResourceGroup, Service, ServiceProbe, User, UserResourceGroup
+from ..models import Host, ProbeLog, ResourceGroup, Service, ServiceProbe, User, UserResourceGroup
 from ..monitoring import MonitoringService
 from ..schemas import ProbeLogOutput, ProbeResultOutput, ServiceCreate, ServiceOutput, ServiceProbeInput, ServiceUpdate
 from ..security import SecretCipher
@@ -123,14 +124,6 @@ def sync_legacy_probe_fields(service: Service, probe: ServiceProbe) -> None:
     service.timeout_seconds = probe.timeout_seconds
 
 
-def get_alert_configs(db: Session, alert_config_ids: List[int]) -> List[AlertConfig]:
-    ids = sorted(set(alert_config_ids))
-    configs = db.scalars(select(AlertConfig).where(AlertConfig.id.in_(ids))).all() if ids else []
-    if len(configs) != len(ids):
-        raise HTTPException(status_code=422, detail="包含不存在的告警配置")
-    return sorted(configs, key=lambda config: config.name)
-
-
 @router.get("", response_model=List[ServiceOutput])
 def list_services(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     return [service_output(service) for service in db.scalars(visible_service_query(current_user)).unique().all()]
@@ -153,7 +146,7 @@ def create_service(
     if not db.get(ResourceGroup, payload.resource_group_id):
         raise HTTPException(status_code=404, detail="资源组不存在")
     validate_configuration(payload.probes, payload.health_rule, payload.auto_restart, payload.start_command)
-    alert_configs = get_alert_configs(db, payload.alert_config_ids)
+    alert_configs = resolve_alert_configs(db, payload.alert_config_ids)
     probes = [make_probe(probe, cipher) for probe in payload.probes]
     service = Service(
         host_id=payload.host_id,
@@ -236,7 +229,7 @@ def update_service(
         service.probes.extend(replacement_probes)
         sync_legacy_probe_fields(service, replacement_probes[0])
     if payload.alert_config_ids is not None:
-        service.alert_configs = get_alert_configs(db, payload.alert_config_ids)
+        service.alert_configs = resolve_alert_configs(db, payload.alert_config_ids)
     try:
         db.commit()
     except IntegrityError:

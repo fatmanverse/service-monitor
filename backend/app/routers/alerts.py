@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..dependencies import get_cipher, get_db, get_monitor, require_admin
-from ..models import AlertConfig, ServiceAlertConfig, User
+from ..models import AlertConfig, HostAlertConfig, ServiceAlertConfig, User
 from ..monitoring import MonitoringService
 from ..schemas import AlertConfigCreate, AlertConfigOutput, AlertConfigUpdate, ProbeResultOutput
 from ..security import SecretCipher
@@ -22,12 +22,18 @@ def alert_output(db: Session, config: AlertConfig) -> AlertConfigOutput:
             ServiceAlertConfig.alert_config_id == config.id
         )
     ) or 0
+    host_count = db.scalar(
+        select(func.count(HostAlertConfig.host_id)).where(
+            HostAlertConfig.alert_config_id == config.id
+        )
+    ) or 0
     return AlertConfigOutput(
         id=config.id,
         name=config.name,
         enabled=config.enabled,
         webhook_configured=bool(config.webhook_encrypted),
         service_count=service_count,
+        host_count=host_count,
         created_at=config.created_at,
         updated_at=config.updated_at,
     )
