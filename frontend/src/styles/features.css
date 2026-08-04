@@ -1,0 +1,328 @@
+/* Feature-specific layouts: service cards, resource cards, probe editor, rule editor. */
+
+/* --- Card grids --- */
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: var(--space-4);
+}
+
+.card-grid-full {
+  grid-column: 1 / -1;
+}
+
+/* --- Service card --- */
+
+.service-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+.service-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-md);
+}
+
+.service-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.service-card-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-bg);
+  color: var(--accent-fg);
+}
+
+.service-card-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.service-card-title span {
+  display: block;
+  overflow: hidden;
+  color: var(--fg-muted);
+  font-size: var(--text-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.service-card-title h2 {
+  margin-top: 2px;
+  font-size: var(--text-base);
+}
+
+.service-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.service-metrics div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.service-metrics dt {
+  color: var(--fg-muted);
+  font-size: var(--text-xs);
+}
+
+.service-metrics dd {
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: var(--weight-medium);
+  font-variant-numeric: tabular-nums;
+}
+
+.probe-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.service-card-status {
+  color: var(--fg-muted);
+  font-size: var(--text-sm);
+}
+
+.service-card-status[data-error='true'] {
+  color: var(--danger-fg);
+}
+
+.service-card-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: auto;
+  padding-top: var(--space-1);
+}
+
+.service-card-footer .ui-button[data-variant='danger'] {
+  margin-left: auto;
+}
+
+/* --- Resource / alert card --- */
+
+.entity-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+.entity-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-md);
+}
+
+.entity-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.entity-card-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-inset);
+  color: var(--fg-secondary);
+}
+
+.entity-card-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.entity-card-title h2 {
+  font-size: var(--text-base);
+}
+
+.entity-card-title p {
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--fg-muted);
+  font-size: var(--text-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.entity-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.entity-metrics div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.entity-metrics dt {
+  color: var(--fg-muted);
+  font-size: var(--text-xs);
+}
+
+.entity-metrics dd {
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: var(--weight-medium);
+}
+
+.entity-card-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: auto;
+}
+
+.entity-card-footer .ui-button[data-variant='danger'] {
+  margin-left: auto;
+}
+
+/* --- Probe editor --- */
+
+.probe-list {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.probe-editor {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+
+.probe-editor-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-inset);
+}
+
+.probe-editor-head-text {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.probe-editor-head strong {
+  overflow: hidden;
+  font-size: var(--text-md);
+  font-weight: var(--weight-medium);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.probe-editor-body {
+  padding: var(--space-4);
+}
+
+/* --- Rule editor --- */
+
+.rule-node {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--bg-inset);
+}
+
+.rule-leaf {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  background: var(--bg-surface);
+}
+
+.rule-leaf > svg {
+  color: var(--fg-muted);
+}
+
+.rule-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.rule-toolbar .ui-select {
+  width: 170px;
+}
+
+.rule-children {
+  display: grid;
+  gap: var(--space-2);
+  padding-left: var(--space-4);
+  border-left: 2px solid var(--accent-border);
+}
+
+.rule-child {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--space-2);
+}
+
+@media (max-width: 768px) {
+  .card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .service-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .service-card-footer {
+    flex-wrap: wrap;
+  }
+
+  .rule-leaf {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .rule-leaf > .ui-button {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
