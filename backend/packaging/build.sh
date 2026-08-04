@@ -5,7 +5,7 @@ ROOT_DIR=$(CDPATH='' cd -- "$(dirname -- "$0")/../.." && pwd)
 OUTPUT_DIR=${OUTPUT_DIR:-"$ROOT_DIR/dist/server"}
 ARTIFACT_NAME=${ARTIFACT_NAME:?ARTIFACT_NAME is required}
 if [ -z "${PYTHON_BIN:-}" ]; then
-    for candidate in /opt/python/cp39-cp39/bin/python /opt/python/cp310-cp310/bin/python python3; do
+    for candidate in /opt/service-monitor-python/bin/python3 python3; do
         if command -v "$candidate" >/dev/null 2>&1 || [ -x "$candidate" ]; then
             PYTHON_BIN=$candidate
             break
@@ -13,6 +13,15 @@ if [ -z "${PYTHON_BIN:-}" ]; then
     done
 fi
 : "${PYTHON_BIN:?No supported Python interpreter found}"
+if [ -d /opt/service-monitor-python/lib ] && [ "${PYTHON_BIN#/opt/service-monitor-python/}" != "$PYTHON_BIN" ]; then
+    export LD_LIBRARY_PATH="/opt/service-monitor-python/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+fi
+PYTHON_LIB_DIR=$($PYTHON_BIN -c 'import sysconfig; print(sysconfig.get_config_var("LIBDIR") or "")')
+if [ -z "$PYTHON_LIB_DIR" ] || ! "$PYTHON_BIN" -c 'import sysconfig; raise SystemExit(0 if sysconfig.get_config_var("Py_ENABLE_SHARED") else 1)'; then
+    printf 'PyInstaller requires a shared Python runtime; %s is not suitable.\n' "$PYTHON_BIN" >&2
+    exit 1
+fi
+export LD_LIBRARY_PATH="$PYTHON_LIB_DIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
 if [ ! -f "$ROOT_DIR/frontend/dist/index.html" ]; then
     printf '%s\n' 'frontend/dist 不存在；请先运行 npm build。' >&2
@@ -20,7 +29,7 @@ if [ ! -f "$ROOT_DIR/frontend/dist/index.html" ]; then
 fi
 
 cd "$ROOT_DIR/backend"
-"$PYTHON_BIN" -m pip install --disable-pip-version-check --no-cache-dir -r requirements-build.txt
+"$PYTHON_BIN" -m pip install --disable-pip-version-check --no-cache-dir -r requirements-build.txt >&2
 cd "$ROOT_DIR"
 rm -rf "$OUTPUT_DIR/work"
 mkdir -p "$OUTPUT_DIR/work" "$OUTPUT_DIR"

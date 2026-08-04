@@ -50,7 +50,7 @@ jobs:
             -v "$GITHUB_WORKSPACE:/workspace" \
             -w /workspace \
             "${{ matrix.image }}" \
-            sh agent/packaging/build.sh
+            sh -c 'PYTHON_BIN=$(sh scripts/build-shared-python.sh); export PYTHON_BIN; sh agent/packaging/build.sh'
 
       - name: Assemble release bundle
         env:

@@ -60,7 +60,7 @@ jobs:
             -v "$GITHUB_WORKSPACE:/workspace" \
             -w /workspace \
             "${{ matrix.image }}" \
-            sh backend/packaging/build.sh
+            sh -c 'PYTHON_BIN=$(sh scripts/build-shared-python.sh); export PYTHON_BIN; sh backend/packaging/build.sh'
       - name: Assemble server bundle
         env:
           ARTIFACT_NAME: ${{ matrix.name }}
