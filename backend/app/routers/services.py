@@ -1,19 +1,21 @@
 import json
-from typing import List
+from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload, selectinload
 
 from ..dependencies import get_cipher, get_current_user, get_db, get_monitor, require_admin
 from ..alert_targets import resolve_alert_configs
+from ..agent_protocol import bump_agent_config_revision, queue_agent_command
 from ..health_rules import HealthRuleError, validate_rule
 from ..models import Host, ProbeLog, ResourceGroup, Service, ServiceProbe, User, UserResourceGroup
 from ..monitoring import MonitoringService
 from ..schemas import ProbeLogOutput, ProbeResultOutput, ServiceCreate, ServiceOutput, ServiceProbeInput, ServiceUpdate
 from ..security import SecretCipher
 from ..serializers import service_output
+from ..start_commands import validate_start_user
 
 
 router = APIRouter(prefix="/services", tags=["服务"])
@@ -50,6 +52,7 @@ def validate_configuration(
     health_rule: dict,
     auto_restart: bool,
     start_command: str,
+    start_user: Optional[str] = None,
     existing_by_key=None,
 ):
     keys = [probe.key for probe in probes]
@@ -64,6 +67,12 @@ def validate_configuration(
         raise HTTPException(status_code=422, detail=str(exc))
     if auto_restart and not start_command:
         raise HTTPException(status_code=422, detail="自动拉起必须提供服务启动命令")
+    if start_user and not start_command:
+        raise HTTPException(status_code=422, detail="启动用户必须提供服务启动命令")
+    try:
+        validate_start_user(start_user)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
     for probe in probes:
         existing = existing_by_key.get(probe.key) if existing_by_key else None
         retained_secret = (
@@ -141,11 +150,18 @@ def create_service(
     cipher: SecretCipher = Depends(get_cipher),
     _admin: User = Depends(require_admin),
 ):
-    if not db.get(Host, payload.host_id):
+    host = db.get(Host, payload.host_id)
+    if not host:
         raise HTTPException(status_code=404, detail="主机不存在")
     if not db.get(ResourceGroup, payload.resource_group_id):
         raise HTTPException(status_code=404, detail="资源组不存在")
-    validate_configuration(payload.probes, payload.health_rule, payload.auto_restart, payload.start_command)
+    validate_configuration(
+        payload.probes,
+        payload.health_rule,
+        payload.auto_restart,
+        payload.start_command,
+        payload.start_user,
+    )
     alert_configs = resolve_alert_configs(db, payload.alert_config_ids)
     probes = [make_probe(probe, cipher) for probe in payload.probes]
     service = Service(
@@ -154,6 +170,7 @@ def create_service(
         name=payload.name,
         health_rule_json=json.dumps(payload.health_rule, ensure_ascii=False),
         start_command=payload.start_command,
+        start_user=payload.start_user,
         check_interval=payload.check_interval,
         enabled=payload.enabled,
         auto_restart=payload.auto_restart,
@@ -162,6 +179,7 @@ def create_service(
     )
     sync_legacy_probe_fields(service, probes[0])
     db.add(service)
+    bump_agent_config_revision(db, host.id)
     try:
         db.commit()
     except IntegrityError:
@@ -182,6 +200,7 @@ def update_service(
     service = db.scalar(select(Service).options(*service_load_options()).where(Service.id == service_id))
     if not service:
         raise HTTPException(status_code=404, detail="服务不存在")
+    original_host_id = service.host_id
     values = payload.model_dump(exclude_unset=True, exclude={"probes", "health_rule", "alert_config_ids"})
     if "host_id" in values and not db.get(Host, values["host_id"]):
         raise HTTPException(status_code=404, detail="主机不存在")
@@ -211,11 +230,13 @@ def update_service(
     )
     effective_auto_restart = values.get("auto_restart", service.auto_restart)
     effective_start_command = values.get("start_command", service.start_command)
+    effective_start_user = values.get("start_user", service.start_user)
     validate_configuration(
         effective_probes,
         effective_rule,
         effective_auto_restart,
         effective_start_command,
+        effective_start_user,
         {probe.key: probe for probe in service.probes},
     )
     for key, value in values.items():
@@ -230,6 +251,9 @@ def update_service(
         sync_legacy_probe_fields(service, replacement_probes[0])
     if payload.alert_config_ids is not None:
         service.alert_configs = resolve_alert_configs(db, payload.alert_config_ids)
+    bump_agent_config_revision(db, original_host_id)
+    if service.host_id != original_host_id:
+        bump_agent_config_revision(db, service.host_id)
     try:
         db.commit()
     except IntegrityError:
@@ -244,6 +268,7 @@ def delete_service(service_id: int, db: Session = Depends(get_db), _admin: User 
     service = db.get(Service, service_id)
     if not service:
         raise HTTPException(status_code=404, detail="服务不存在")
+    bump_agent_config_revision(db, service.host_id)
     db.delete(service)
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -252,11 +277,27 @@ def delete_service(service_id: int, db: Session = Depends(get_db), _admin: User 
 @router.post("/{service_id}/probe", response_model=ProbeResultOutput)
 def probe_service(
     service_id: int,
+    request: Request,
     db: Session = Depends(get_db),
     monitor: MonitoringService = Depends(get_monitor),
     current_user: User = Depends(get_current_user),
 ):
     service = get_visible_service(db, service_id, current_user)
+    if service.host.execution_mode == "agent":
+        command = queue_agent_command(
+            db,
+            service,
+            "probe_service",
+            request.app.state.settings.agent_offline_seconds,
+        )
+        return ProbeResultOutput(
+            mode="queued",
+            success=None,
+            status=service.status,
+            message="已加入 Agent 命令队列",
+            command_id=command.command_id,
+            command_status=command.status,
+        )
     result = monitor.check_service(db, service, allow_restart=current_user.is_admin)
     return ProbeResultOutput(success=result.success, status=result.status, message=result.message, response_ms=result.response_ms, restarted=result.restarted)
 
@@ -264,6 +305,7 @@ def probe_service(
 @router.post("/{service_id}/restart", response_model=ProbeResultOutput)
 def restart_service(
     service_id: int,
+    request: Request,
     db: Session = Depends(get_db),
     monitor: MonitoringService = Depends(get_monitor),
     _admin: User = Depends(require_admin),
@@ -271,6 +313,21 @@ def restart_service(
     service = db.scalar(select(Service).options(*service_load_options()).where(Service.id == service_id))
     if not service:
         raise HTTPException(status_code=404, detail="服务不存在")
+    if service.host.execution_mode == "agent":
+        command = queue_agent_command(
+            db,
+            service,
+            "restart_service",
+            request.app.state.settings.agent_offline_seconds,
+        )
+        return ProbeResultOutput(
+            mode="queued",
+            success=None,
+            status=service.status,
+            message="已加入 Agent 命令队列",
+            command_id=command.command_id,
+            command_status=command.status,
+        )
     result = monitor.restart_and_check(db, service)
     return ProbeResultOutput(success=result.success, status=result.status, message=result.message, response_ms=result.response_ms, restarted=result.restarted)
 

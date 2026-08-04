@@ -92,6 +92,15 @@ python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 - `ACCESS_TOKEN_MINUTES`：默认 `480`
 - `SCHEDULER_ENABLED`：默认 `true`
 - `MONITOR_WORKERS`：默认 `200`，限制并发 SSH/HTTP 探活数量；低配置机器可按资源下调
+- `AGENT_GRPC_BIND`：Agent gRPC TLS 服务监听地址，默认 `[::]:50051`
+- `AGENT_GRPC_CERT_FILE` / `AGENT_GRPC_KEY_FILE`：Agent gRPC 服务端证书与私钥；启动 gRPC 服务时必须同时设置
+
+Agent 注册、领取、心跳、配置同步和结果上报使用独立的 gRPC 服务，不经过 FastAPI。管理后台仍使用 FastAPI 提供管理员审批、撤销、密钥轮换和命令查询。启动 gRPC 服务：
+
+```bash
+cd backend
+python3 -m app.agent_grpc_server
+```
 
 ## SSH 主机密钥
 

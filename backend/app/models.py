@@ -80,9 +80,10 @@ class Host(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(100), unique=True, index=True)
     hostname: Mapped[str] = mapped_column(String(255))
-    port: Mapped[int] = mapped_column(Integer, default=22)
+    port: Mapped[Optional[int]] = mapped_column(Integer, default=22, nullable=True)
     username: Mapped[str] = mapped_column(String(100))
     auth_type: Mapped[str] = mapped_column(String(16), default="password")
+    execution_mode: Mapped[str] = mapped_column(String(16), default="ssh", index=True)
     password_encrypted: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     private_key_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     check_interval: Mapped[int] = mapped_column(Integer, default=60)
@@ -98,6 +99,9 @@ class Host(Base):
     )
     alert_configs: Mapped[List["AlertConfig"]] = relationship(
         secondary="host_alert_configs", back_populates="hosts", passive_deletes=True
+    )
+    agent: Mapped[Optional["Agent"]] = relationship(
+        back_populates="host", cascade="all, delete-orphan", passive_deletes=True, uselist=False
     )
 
 
@@ -123,6 +127,7 @@ class Service(Base):
     expected_status: Mapped[int] = mapped_column(Integer, default=200)
     timeout_seconds: Mapped[int] = mapped_column(Integer, default=10)
     start_command: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    start_user: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     check_interval: Mapped[int] = mapped_column(Integer, default=60)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     auto_restart: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -146,6 +151,9 @@ class Service(Base):
     logs: Mapped[List["ProbeLog"]] = relationship(cascade="all, delete-orphan", passive_deletes=True)
     alert_configs: Mapped[List["AlertConfig"]] = relationship(
         secondary="service_alert_configs", back_populates="services", passive_deletes=True
+    )
+    agent_commands: Mapped[List["AgentCommand"]] = relationship(
+        back_populates="service", cascade="all, delete-orphan", passive_deletes=True
     )
 
 
@@ -203,6 +211,78 @@ class AlertConfig(Base):
     hosts: Mapped[List[Host]] = relationship(
         secondary="host_alert_configs", back_populates="alert_configs", passive_deletes=True
     )
+
+
+class Agent(Base):
+    __tablename__ = "agents"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    agent_uuid: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    status: Mapped[str] = mapped_column(String(16), default="pending", index=True)
+    host_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("hosts.id", ondelete="CASCADE"), unique=True, nullable=True, index=True
+    )
+    claim_token_hash: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    secret_hash: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    pending_secret_encrypted: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    hostname: Mapped[str] = mapped_column(String(255))
+    runtime_user: Mapped[str] = mapped_column(String(100))
+    os_release: Mapped[str] = mapped_column(String(500))
+    architecture: Mapped[str] = mapped_column(String(32))
+    glibc_version: Mapped[str] = mapped_column(String(32))
+    agent_version: Mapped[str] = mapped_column(String(32))
+    last_seen_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, index=True)
+    last_ip: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    config_revision: Mapped[int] = mapped_column(Integer, default=0)
+    last_report_sequence: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
+    approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    revoked_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    host: Mapped[Optional[Host]] = relationship(back_populates="agent")
+    commands: Mapped[List["AgentCommand"]] = relationship(
+        back_populates="agent", cascade="all, delete-orphan", passive_deletes=True
+    )
+    report_receipts: Mapped[List["AgentReportReceipt"]] = relationship(
+        back_populates="agent", cascade="all, delete-orphan", passive_deletes=True
+    )
+
+
+class AgentCommand(Base):
+    __tablename__ = "agent_commands"
+
+    command_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    agent_id: Mapped[int] = mapped_column(
+        ForeignKey("agents.id", ondelete="CASCADE"), index=True
+    )
+    service_id: Mapped[int] = mapped_column(
+        ForeignKey("services.id", ondelete="CASCADE"), index=True
+    )
+    command_type: Mapped[str] = mapped_column(String(32))
+    status: Mapped[str] = mapped_column(String(16), default="pending", index=True)
+    payload_json: Mapped[str] = mapped_column(Text, default="{}")
+    result_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+    claimed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    finished_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, index=True)
+    agent: Mapped[Agent] = relationship(back_populates="commands")
+    service: Mapped[Service] = relationship(back_populates="agent_commands")
+
+
+class AgentReportReceipt(Base):
+    __tablename__ = "agent_report_receipts"
+    __table_args__ = (
+        UniqueConstraint("agent_id", "report_sequence", name="uq_agent_report_sequence"),
+    )
+
+    agent_id: Mapped[int] = mapped_column(
+        ForeignKey("agents.id", ondelete="CASCADE"), primary_key=True
+    )
+    report_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    report_sequence: Mapped[int] = mapped_column(Integer)
+    received_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+    agent: Mapped[Agent] = relationship(back_populates="report_receipts")
 
 
 class AppMigration(Base):

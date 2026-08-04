@@ -473,6 +473,35 @@ def test_service_update_rejects_empty_health_rule(client, admin_headers):
     assert unchanged.json()["health_rule"] == {"probe": "http-main"}
 
 
+def test_service_start_user_can_be_set_and_cleared(client, admin_headers):
+    host = create_host(client, admin_headers)
+    service = create_service(client, admin_headers, host["id"])
+
+    configured = client.put(
+        f"/api/services/{service['id']}",
+        headers=admin_headers,
+        json={"start_command": "systemctl start api-service", "start_user": "service-user"},
+    )
+    assert configured.status_code == 200, configured.text
+    assert configured.json()["start_user"] == "service-user"
+
+    cleared = client.put(
+        f"/api/services/{service['id']}",
+        headers=admin_headers,
+        json={"start_user": None},
+    )
+    assert cleared.status_code == 200, cleared.text
+    assert cleared.json()["start_user"] is None
+
+    invalid = client.put(
+        f"/api/services/{service['id']}",
+        headers=admin_headers,
+        json={"start_user": "root; reboot"},
+    )
+    assert invalid.status_code == 422
+    assert invalid.json()["detail"] == "启动用户格式无效"
+
+
 def test_nested_health_rule_evaluation():
     from app.health_rules import evaluate_rule
 

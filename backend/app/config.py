@@ -11,6 +11,10 @@ class Settings(BaseSettings):
     access_token_minutes: int = 480
     scheduler_enabled: bool = True
     monitor_workers: int = 200
+    agent_offline_seconds: int = 90
+    agent_grpc_bind: str = "[::]:50051"
+    agent_grpc_cert_file: str = ""
+    agent_grpc_key_file: str = ""
     testing: bool = False
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")

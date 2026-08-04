@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 from .health_rules import HealthRuleError, evaluate_rule
 from .models import AlertConfig, Host, ProbeLog, Service, ServiceProbe
 from .security import SecretCipher
+from .start_commands import build_ssh_start_command
 
 
 logger = logging.getLogger(__name__)
@@ -188,7 +189,8 @@ class MonitoringService:
         started = time.monotonic()
         try:
             client = self._connect_ssh(service.host)
-            _stdin, stdout, stderr = client.exec_command(service.start_command, timeout=30)
+            command = build_ssh_start_command(service.start_command, service.start_user)
+            _stdin, stdout, stderr = client.exec_command(command, timeout=30)
             stdout.read()
             error = stderr.read().decode().strip()
             exit_code = stdout.channel.recv_exit_status()

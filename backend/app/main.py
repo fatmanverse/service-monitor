@@ -11,7 +11,16 @@ from .database import Database
 from .models import User
 from .migrations import migrate_database
 from .monitoring import MonitoringService
-from .routers import alerts, auth, hosts, resource_groups, services, users
+from .routers import (
+    agent_commands,
+    agents,
+    alerts,
+    auth,
+    hosts,
+    resource_groups,
+    services,
+    users,
+)
 from .scheduler import MonitorScheduler
 from .security import SecretCipher, hash_password
 
@@ -21,7 +30,12 @@ def create_app(settings: Settings = None) -> FastAPI:
     database = Database(resolved_settings)
     cipher = SecretCipher(resolved_settings.app_secret)
     monitoring = MonitoringService(cipher, probe_workers=resolved_settings.monitor_workers * 2)
-    scheduler = MonitorScheduler(database, monitoring, workers=resolved_settings.monitor_workers)
+    scheduler = MonitorScheduler(
+        database,
+        monitoring,
+        workers=resolved_settings.monitor_workers,
+        agent_offline_seconds=resolved_settings.agent_offline_seconds,
+    )
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -64,6 +78,8 @@ def create_app(settings: Settings = None) -> FastAPI:
         allow_headers=["*"],
     )
     app.include_router(auth.router, prefix="/api")
+    app.include_router(agent_commands.router, prefix="/api")
+    app.include_router(agents.router, prefix="/api")
     app.include_router(hosts.router, prefix="/api")
     app.include_router(resource_groups.router, prefix="/api")
     app.include_router(services.router, prefix="/api")

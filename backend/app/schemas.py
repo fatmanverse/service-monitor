@@ -116,9 +116,10 @@ class HostOutput(BaseModel):
     id: int
     name: str
     hostname: str
-    port: int
+    port: Optional[int]
     username: str
     auth_type: str
+    execution_mode: str
     private_key_path: Optional[str]
     check_interval: int
     enabled: bool
@@ -181,6 +182,7 @@ class ServiceBase(BaseModel):
     probes: List[ServiceProbeInput] = Field(min_length=1, max_length=50)
     health_rule: dict
     start_command: Optional[str] = None
+    start_user: Optional[str] = Field(default=None, max_length=100)
     check_interval: int = Field(default=60, ge=60, le=86400)
     enabled: bool = True
     auto_restart: bool = False
@@ -209,6 +211,7 @@ class ServiceUpdate(BaseModel):
     probes: Optional[List[ServiceProbeInput]] = Field(default=None, min_length=1, max_length=50)
     health_rule: Optional[dict] = None
     start_command: Optional[str] = None
+    start_user: Optional[str] = Field(default=None, max_length=100)
     check_interval: Optional[int] = Field(default=None, ge=60, le=86400)
     enabled: Optional[bool] = None
     auto_restart: Optional[bool] = None
@@ -225,6 +228,7 @@ class ServiceOutput(BaseModel):
     probes: List[ServiceProbeOutput]
     health_rule: dict
     start_command: Optional[str]
+    start_user: Optional[str]
     check_interval: int
     enabled: bool
     auto_restart: bool
@@ -238,11 +242,14 @@ class ServiceOutput(BaseModel):
 
 
 class ProbeResultOutput(BaseModel):
-    success: bool
+    mode: Literal["immediate", "queued"] = "immediate"
+    success: Optional[bool]
     status: str
     message: str
     response_ms: Optional[int] = None
     restarted: bool = False
+    command_id: Optional[str] = None
+    command_status: Optional[str] = None
 
 
 class ProbeLogOutput(BaseModel):
