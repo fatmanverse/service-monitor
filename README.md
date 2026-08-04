@@ -102,6 +102,10 @@ cd backend
 python3 -m app.agent_grpc_server
 ```
 
+Agent 的无 Python 部署、PyInstaller 构建、四套 glibc 产物和 systemd 安装见 [docs/agent-install.md](docs/agent-install.md)。推送 `v*` tag 或手动运行 `Build Service Monitor Agent` workflow 会构建并发布 GitHub Release 资产。
+
+管理服务使用 `Build Service Monitor Server` workflow：先构建 React 静态资源，再将其嵌入后端 PyInstaller 二进制，发布 x86_64/ARM64 两套 glibc 2.28 服务端包。部署说明见 [docs/server-install.md](docs/server-install.md)。
+
 ## SSH 主机密钥
 
 系统只信任运行账户 `known_hosts` 中已登记的 SSH 主机密钥，未知主机密钥会明确拒绝。首次接入节点前，可使用 `ssh-keyscan -H <主机地址> >> ~/.ssh/known_hosts` 登记并人工核对指纹。

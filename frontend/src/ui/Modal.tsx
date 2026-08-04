@@ -10,13 +10,26 @@ interface ModalProps {
   title: string
   description?: string
   size?: 'md' | 'sm'
+  /** Blocks Escape and backdrop dismissal while a request is in flight. */
+  busy?: boolean
   onClose: () => void
   footer?: ReactNode
   children?: ReactNode
 }
 
-export function Modal({ title, description, size = 'md', onClose, footer, children }: ModalProps) {
+export function Modal({
+  title,
+  description,
+  size = 'md',
+  busy = false,
+  onClose,
+  footer,
+  children,
+}: ModalProps) {
   const modalRef = useRef<HTMLDivElement>(null)
+  // Read through a ref so toggling `busy` does not tear down the focus trap.
+  const busyRef = useRef(busy)
+  busyRef.current = busy
 
   useEffect(() => {
     const previouslyFocused = document.activeElement as HTMLElement | null
@@ -29,7 +42,7 @@ export function Modal({ title, description, size = 'md', onClose, footer, childr
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         event.stopPropagation()
-        onClose()
+        if (!busyRef.current) onClose()
         return
       }
       if (event.key !== 'Tab' || !node) return
@@ -57,7 +70,13 @@ export function Modal({ title, description, size = 'md', onClose, footer, childr
   }, [onClose])
 
   return (
-    <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
+    <div
+      className="modal-backdrop"
+      role="presentation"
+      onMouseDown={() => {
+        if (!busy) onClose()
+      }}
+    >
       <div
         ref={modalRef}
         className="ui-modal"
@@ -72,7 +91,7 @@ export function Modal({ title, description, size = 'md', onClose, footer, childr
             <h2>{title}</h2>
             {description && <p>{description}</p>}
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose} aria-label="关闭">
+          <Button variant="ghost" size="icon" onClick={onClose} disabled={busy} aria-label="关闭">
             <X size={18} />
           </Button>
         </header>

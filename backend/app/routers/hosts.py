@@ -122,5 +122,7 @@ def probe_host(
     host = db.get(Host, host_id)
     if not host:
         raise HTTPException(status_code=404, detail="主机不存在")
+    if host.execution_mode == "agent":
+        raise HTTPException(status_code=409, detail="Agent 主机状态由心跳维护")
     result = monitor.check_host(db, host)
     return ProbeResultOutput(success=result.success, status=result.status, message=result.message, response_ms=result.response_ms)

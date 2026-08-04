@@ -9,49 +9,79 @@ import type {
 interface FieldShellProps {
   label: string
   hint?: string
+  error?: string
   wide?: boolean
-  children: (id: string) => ReactNode
+  children: (props: { id: string; describedBy?: string; invalid: boolean }) => ReactNode
 }
 
-/** Wraps a control with its label and optional hint, wiring up htmlFor/id. */
-function FieldShell({ label, hint, wide, children }: FieldShellProps) {
+/**
+ * Wraps a control with its label, hint and error, wiring up htmlFor/id and
+ * aria-describedby. An error replaces the hint so the message occupies one spot
+ * instead of competing with helper text.
+ */
+function FieldShell({ label, hint, error, wide, children }: FieldShellProps) {
   const id = useId()
+  const messageId = `${id}-message`
+  const message = error ?? hint
+
   return (
     <div className={wide ? 'ui-field form-grid-wide' : 'ui-field'}>
       <label className="ui-field-label" htmlFor={id}>
         {label}
       </label>
-      {children(id)}
-      {hint && <span className="ui-field-hint">{hint}</span>}
+      {children({ id, describedBy: message ? messageId : undefined, invalid: Boolean(error) })}
+      {message && (
+        <span
+          className="ui-field-hint"
+          id={messageId}
+          data-tone={error ? 'danger' : undefined}
+          role={error ? 'alert' : undefined}
+        >
+          {message}
+        </span>
+      )}
     </div>
   )
 }
 
-type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'className' | 'id'> & {
+interface CommonProps {
   label: string
   hint?: string
+  error?: string
   wide?: boolean
 }
 
-export function TextField({ label, hint, wide, ...rest }: InputProps) {
+type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'className' | 'id'> & CommonProps
+
+export function TextField({ label, hint, error, wide, ...rest }: InputProps) {
   return (
-    <FieldShell label={label} hint={hint} wide={wide}>
-      {(id) => <input {...rest} id={id} className="ui-input" />}
+    <FieldShell label={label} hint={hint} error={error} wide={wide}>
+      {({ id, describedBy, invalid }) => (
+        <input
+          {...rest}
+          id={id}
+          className="ui-input"
+          aria-describedby={describedBy}
+          aria-invalid={invalid || undefined}
+        />
+      )}
     </FieldShell>
   )
 }
 
-type SelectProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, 'className' | 'id'> & {
-  label: string
-  hint?: string
-  wide?: boolean
-}
+type SelectProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, 'className' | 'id'> & CommonProps
 
-export function SelectField({ label, hint, wide, children, ...rest }: SelectProps) {
+export function SelectField({ label, hint, error, wide, children, ...rest }: SelectProps) {
   return (
-    <FieldShell label={label} hint={hint} wide={wide}>
-      {(id) => (
-        <select {...rest} id={id} className="ui-select">
+    <FieldShell label={label} hint={hint} error={error} wide={wide}>
+      {({ id, describedBy, invalid }) => (
+        <select
+          {...rest}
+          id={id}
+          className="ui-select"
+          aria-describedby={describedBy}
+          aria-invalid={invalid || undefined}
+        >
           {children}
         </select>
       )}
@@ -59,30 +89,39 @@ export function SelectField({ label, hint, wide, children, ...rest }: SelectProp
   )
 }
 
-type TextareaProps = Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'className' | 'id'> & {
-  label: string
-  hint?: string
-  wide?: boolean
-}
+type TextareaProps = Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'className' | 'id'> &
+  CommonProps & { mono?: boolean }
 
-export function TextareaField({ label, hint, wide, ...rest }: TextareaProps) {
+export function TextareaField({ label, hint, error, wide, mono, ...rest }: TextareaProps) {
   return (
-    <FieldShell label={label} hint={hint} wide={wide}>
-      {(id) => <textarea {...rest} id={id} className="ui-textarea" />}
+    <FieldShell label={label} hint={hint} error={error} wide={wide}>
+      {({ id, describedBy, invalid }) => (
+        <textarea
+          {...rest}
+          id={id}
+          className={mono ? 'ui-textarea u-mono' : 'ui-textarea'}
+          aria-describedby={describedBy}
+          aria-invalid={invalid || undefined}
+        />
+      )}
     </FieldShell>
   )
 }
 
 type CheckboxProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'className' | 'type'> & {
   label: string
+  hint?: string
   wide?: boolean
 }
 
-export function CheckboxField({ label, wide, ...rest }: CheckboxProps) {
+export function CheckboxField({ label, hint, wide, ...rest }: CheckboxProps) {
   return (
     <label className={wide ? 'ui-checkbox form-grid-wide' : 'ui-checkbox'}>
       <input {...rest} type="checkbox" />
-      {label}
+      <span className="ui-checkbox-text">
+        {label}
+        {hint && <small>{hint}</small>}
+      </span>
     </label>
   )
 }

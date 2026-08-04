@@ -1,0 +1,18 @@
+[Unit]
+Description=Service Monitor Agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/service-monitor-agent --config /etc/service-monitor-agent/agent.toml
+Restart=on-failure
+RestartSec=5s
+User=root
+WorkingDirectory=/var/lib/service-monitor-agent
+StateDirectory=service-monitor-agent
+ReadWritePaths=/etc/service-monitor-agent /var/lib/service-monitor-agent
+NoNewPrivileges=false
+
+[Install]
+WantedBy=multi-user.target

@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from pathlib import Path
+import sys
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -23,6 +24,12 @@ from .routers import (
 )
 from .scheduler import MonitorScheduler
 from .security import SecretCipher, hash_password
+
+
+def frontend_dist_path() -> Path:
+    if hasattr(sys, "_MEIPASS"):
+        return Path(sys._MEIPASS) / "frontend" / "dist"
+    return Path(__file__).resolve().parents[2] / "frontend" / "dist"
 
 
 def create_app(settings: Settings = None) -> FastAPI:
@@ -90,7 +97,7 @@ def create_app(settings: Settings = None) -> FastAPI:
     def health():
         return {"status": "ok"}
 
-    frontend_dist = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+    frontend_dist = frontend_dist_path()
     if frontend_dist.exists():
         app.mount("/", StaticFiles(directory=frontend_dist, html=True), name="frontend")
 

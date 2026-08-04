@@ -1,0 +1,18 @@
+[Unit]
+Description=Service Monitor Server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/service-monitor/service-monitor.env
+ExecStart=/usr/local/bin/service-monitor-server
+Restart=on-failure
+RestartSec=5s
+User=root
+WorkingDirectory=/var/lib/service-monitor
+StateDirectory=service-monitor
+ReadWritePaths=/etc/service-monitor /var/lib/service-monitor
+
+[Install]
+WantedBy=multi-user.target

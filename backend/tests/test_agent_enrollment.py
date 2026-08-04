@@ -1,4 +1,5 @@
 from app.models import Agent, Host, Service
+from app.protocol_gen import agent_pb2
 
 
 ENROLLMENT = {
@@ -129,3 +130,11 @@ def test_enrollment_updates_one_pending_record(client, admin_headers, agent_rpc)
     assert len(agents) == 1
     assert agents[0]["agent_version"] == "0.1.1"
     assert agents[0]["os_release"] == "Debian 12"
+
+
+def test_grpc_rejects_unsupported_config_protocol_version(client, agent_rpc):
+    from conftest import GrpcTestContext
+
+    context = GrpcTestContext()
+    agent_rpc.service.GetConfig(agent_pb2.ConfigRequest(protocol_version=2), context)
+    assert context.code.name == "FAILED_PRECONDITION"

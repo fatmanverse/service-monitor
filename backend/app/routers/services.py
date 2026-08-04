@@ -245,7 +245,9 @@ def update_service(
         service.health_rule_json = json.dumps(payload.health_rule, ensure_ascii=False)
     if payload.probes is not None:
         existing_by_key = {probe.key: probe for probe in service.probes}
-        service.probes.clear()
+        for probe in list(service.probes):
+            db.delete(probe)
+        db.flush()
         replacement_probes = [make_probe(probe, cipher, existing_by_key.get(probe.key)) for probe in payload.probes]
         service.probes.extend(replacement_probes)
         sync_legacy_probe_fields(service, replacement_probes[0])

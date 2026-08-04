@@ -7,14 +7,17 @@ name = "service-monitor-agent"
 version = "0.1.0"
 requires-python = ">=3.9"
 dependencies = [
-  "cryptography==45.0.6",
-  "grpcio==1.63.0",
+  "cryptography==43.0.3",
+  "grpcio==1.75.1",
   "protobuf==5.26.1",
   "tomli==2.2.1; python_version < '3.11'",
 ]
 
 [project.scripts]
 service-monitor-agent = "service_monitor_agent.__main__:main"
+
+[tool.setuptools]
+packages = ["service_monitor_agent", "service_monitor_agent.protocol_gen"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -2,13 +2,12 @@
 
 ## Current Todo
 
-Task 7/8 protocol correction: local execution engine and gRPC transport.
+Task 11 final release-matrix execution in GitHub Actions and end-to-end deployment evidence.
 
 ## Active Slice
 
-- Retire FastAPI REST Agent protocol and urllib client.
-- Add protobuf as the single wire-contract owner.
-- Implement center gRPC service and TLS Agent client.
+- Run GitHub Actions binary compatibility matrix.
+- Execute installed systemd service checks on release targets.
 
 ## Completed
 
@@ -19,6 +18,10 @@ Task 7/8 protocol correction: local execution engine and gRPC transport.
 - Raw SQLite rebuild check preserved rows, made port nullable, restored indexes and passed `foreign_key_check`.
 - Task 2 start-user command builders, API fields and SSH execution integration completed.
 - Agent storage, probes, nested rule engine, start command execution and command idempotency have standard-library unit coverage.
+- Agent REST protocol retired; TLS gRPC is the only Agent control-plane transport.
+- Agent management frontend, host execution-mode split, start user and queued command tracking completed.
+- PyInstaller packaging, installers, release workflows and target-image binary smoke matrix completed in code.
+- Agent execution/identity/offline-autonomy ADR recorded.
 
 ## Evidence
 
@@ -36,7 +39,7 @@ Task 7/8 protocol correction: local execution engine and gRPC transport.
 
 ## Blockers
 
-- Local Python environment may not have backend test dependencies; compile and static checks remain available.
+- Local Docker daemon is unavailable, so manylinux and target-distribution binary execution remains delegated to GitHub Actions.
 
 ## Explicit Non-Edits
 
@@ -47,7 +50,7 @@ Task 7/8 protocol correction: local execution engine and gRPC transport.
 
 ## Next
 
-Create `protocol/agent.proto`, generate both runtime stubs, then migrate the center service and Agent client.
+Push the branch, run all GitHub Actions, and capture release asset/systemd evidence.
 
 ## Drift Check
 

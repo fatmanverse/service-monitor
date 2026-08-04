@@ -1,5 +1,7 @@
 export type Status = 'unknown' | 'online' | 'offline'
 
+export type ExecutionMode = 'ssh' | 'agent'
+
 export interface User {
   id: number
   username: string
@@ -12,9 +14,10 @@ export interface Host {
   id: number
   name: string
   hostname: string
-  port: number
+  port?: number | null
   username: string
-  auth_type: 'password' | 'key'
+  auth_type: 'password' | 'key' | 'agent'
+  execution_mode: ExecutionMode
   private_key_path?: string | null
   check_interval: number
   enabled: boolean
@@ -70,6 +73,7 @@ export interface Service {
   probes: Probe[]
   health_rule: HealthRule
   start_command?: string | null
+  start_user?: string | null
   check_interval: number
   enabled: boolean
   auto_restart: boolean
@@ -82,12 +86,70 @@ export interface Service {
   created_at: string
 }
 
+/**
+ * Result of a probe / restart / alert-test action. Hosts running in `agent`
+ * execution mode cannot answer synchronously: the backend queues a command and
+ * replies with `mode: 'queued'` plus the `command_id` to poll.
+ */
 export interface ProbeResult {
-  success: boolean
+  mode: 'immediate' | 'queued'
+  success?: boolean | null
   status: Status
   message: string
   response_ms?: number | null
   restarted: boolean
+  command_id?: string | null
+  command_status?: string | null
+}
+
+/** Lifecycle of a queued agent command, as written by the backend. */
+export type AgentCommandState = 'pending' | 'claimed' | 'succeeded' | 'failed' | 'expired'
+
+/** Subset of the agent report that the backend stores in `result_json`. */
+export interface AgentCommandReport {
+  success: boolean
+  message: string
+  response_ms?: number | null
+  restarted?: boolean
+}
+
+export interface AgentCommandStatus {
+  command_id: string
+  service_id: number
+  command_type: string
+  status: AgentCommandState
+  result?: AgentCommandReport | null
+  created_at: string
+  claimed_at?: string | null
+  finished_at?: string | null
+  expires_at: string
+}
+
+export type AgentState = 'pending' | 'approved' | 'rejected' | 'revoked'
+
+export interface Agent {
+  id: number
+  agent_uuid: string
+  status: AgentState
+  hostname: string
+  runtime_user: string
+  os_release: string
+  architecture: string
+  glibc_version: string
+  agent_version: string
+  last_seen_at?: string | null
+  last_ip?: string | null
+  config_revision: number
+  created_at: string
+  approved_at?: string | null
+  revoked_at?: string | null
+  host?: Host | null
+  ssh_credentials_removed: boolean
+}
+
+export interface AgentSecretRotation {
+  agent: Agent
+  agent_secret: string
 }
 
 export interface AlertConfig {

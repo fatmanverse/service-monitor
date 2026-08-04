@@ -45,3 +45,18 @@ def test_agent_host_is_excluded_from_ssh_scheduler(
     monkeypatch.setattr(monitor, "check_host", unexpected)
     monkeypatch.setattr(monitor, "check_service", unexpected)
     client.app.state.scheduler.run_due_checks()
+
+
+def test_agent_host_rejects_manual_ssh_probe(client, admin_headers, agent_rpc, monkeypatch):
+    approved, _metadata = approve_agent(client, admin_headers, agent_rpc)
+
+    def unexpected(*_args, **_kwargs):
+        raise AssertionError("Agent 主机不得进入 SSH 探活")
+
+    monkeypatch.setattr(client.app.state.monitoring, "check_host", unexpected)
+    response = client.post(
+        f"/api/hosts/{approved['host']['id']}/probe",
+        headers=admin_headers,
+    )
+    assert response.status_code == 409
+    assert response.json()["detail"] == "Agent 主机状态由心跳维护"

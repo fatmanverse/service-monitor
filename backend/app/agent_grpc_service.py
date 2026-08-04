@@ -31,6 +31,7 @@ class AgentControlService(agent_pb2_grpc.AgentControlServicer):
 
     def Enroll(self, request, context):
         try:
+            _ensure_request_size(request, 8192)
             payload = AgentEnrollInput(**_message_dict(request))
             peer_ip = _peer_ip(context)
             if not self.enrollment_limiter.allow(f"ip:{peer_ip}") or not self.enrollment_limiter.allow(
@@ -70,6 +71,7 @@ class AgentControlService(agent_pb2_grpc.AgentControlServicer):
 
     def Heartbeat(self, request, context):
         try:
+            _ensure_protocol_version(request.protocol_version)
             agent = self._authenticated_agent(context)
             payload = AgentHeartbeatInput(**_message_dict(request))
             with self.database.session_factory() as db:
@@ -117,6 +119,7 @@ class AgentControlService(agent_pb2_grpc.AgentControlServicer):
 
     def GetConfig(self, request, context):
         try:
+            _ensure_protocol_version(request.protocol_version)
             agent = self._authenticated_agent(context)
             with self.database.session_factory() as db:
                 payload = build_agent_config(db, db.get(Agent, agent.id), self.cipher)
@@ -127,6 +130,7 @@ class AgentControlService(agent_pb2_grpc.AgentControlServicer):
 
     def Report(self, request, context):
         try:
+            _ensure_protocol_version(request.protocol_version)
             agent = self._authenticated_agent(context)
             payload = AgentReportsInput(
                 protocol_version=request.protocol_version,
@@ -162,6 +166,16 @@ class AgentControlService(agent_pb2_grpc.AgentControlServicer):
 
 def _message_dict(message):
     return {field.name: getattr(message, field.name) for field in message.DESCRIPTOR.fields}
+
+
+def _ensure_protocol_version(version):
+    if version != 1:
+        raise HTTPException(status_code=409, detail="不支持的协议主版本")
+
+
+def _ensure_request_size(request, limit):
+    if request.ByteSize() > limit:
+        raise HTTPException(status_code=413, detail="注册申请过大")
 
 
 def _peer_ip(context):

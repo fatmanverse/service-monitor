@@ -304,6 +304,86 @@
   gap: var(--space-2);
 }
 
+/* --- Agent management --- */
+
+.agent-table {
+  min-width: 1120px;
+}
+
+.agent-environment,
+.agent-host-cell {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.agent-environment small {
+  color: var(--fg-muted);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.agent-host-cell .ui-badge {
+  width: max-content;
+}
+
+.approval-form {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.approval-form .segmented {
+  width: max-content;
+}
+
+.secret-panel {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--warning-border);
+  border-radius: var(--radius-sm);
+  background: var(--warning-bg);
+  color: var(--warning-fg);
+}
+
+.secret-panel code {
+  overflow-wrap: anywhere;
+  color: var(--fg-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.mode-badge {
+  display: inline-flex;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  color: var(--fg-muted);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+}
+
+.mode-badge[data-mode='agent'] {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--accent-fg);
+}
+
+.agent-host-notice {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--warning-border);
+  border-radius: var(--radius-sm);
+  background: var(--warning-bg);
+  color: var(--warning-fg);
+}
+
+.agent-host-notice span {
+  font-size: var(--text-sm);
+}
+
 @media (max-width: 768px) {
   .card-grid {
     grid-template-columns: 1fr;
