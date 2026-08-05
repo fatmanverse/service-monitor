@@ -1,6 +1,6 @@
 export type Status = 'unknown' | 'online' | 'offline'
 
-export type ExecutionMode = 'ssh' | 'agent'
+type ExecutionMode = 'ssh' | 'agent'
 
 export interface User {
   id: number
@@ -106,7 +106,7 @@ export interface ProbeResult {
 export type AgentCommandState = 'pending' | 'claimed' | 'succeeded' | 'failed' | 'expired'
 
 /** Subset of the agent report that the backend stores in `result_json`. */
-export interface AgentCommandReport {
+interface AgentCommandReport {
   success: boolean
   message: string
   response_ms?: number | null
@@ -125,7 +125,7 @@ export interface AgentCommandStatus {
   expires_at: string
 }
 
-export type AgentState = 'pending' | 'approved' | 'rejected' | 'revoked'
+type AgentState = 'pending' | 'approved' | 'rejected' | 'revoked'
 
 export interface Agent {
   id: number
@@ -163,7 +163,7 @@ export interface AlertConfig {
   updated_at: string
 }
 
-export interface AlertConfigReference {
+interface AlertConfigReference {
   id: number
   name: string
   enabled: boolean

@@ -27,9 +27,11 @@ export function Modal({
   children,
 }: ModalProps) {
   const modalRef = useRef<HTMLDivElement>(null)
-  // Read through a ref so toggling `busy` does not tear down the focus trap.
+  // Read mutable props through refs so form re-renders do not reset focus.
   const busyRef = useRef(busy)
+  const onCloseRef = useRef(onClose)
   busyRef.current = busy
+  onCloseRef.current = onClose
 
   useEffect(() => {
     const previouslyFocused = document.activeElement as HTMLElement | null
@@ -42,7 +44,7 @@ export function Modal({
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         event.stopPropagation()
-        if (!busyRef.current) onClose()
+        if (!busyRef.current) onCloseRef.current()
         return
       }
       if (event.key !== 'Tab' || !node) return
@@ -67,7 +69,7 @@ export function Modal({
       document.body.style.overflow = overflow
       previouslyFocused?.focus()
     }
-  }, [onClose])
+  }, [])
 
   return (
     <div

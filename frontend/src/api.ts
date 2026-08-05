@@ -13,7 +13,7 @@ import type {
 
 const TOKEN_KEY = 'service-monitor-token'
 
-export class ApiError extends Error {
+class ApiError extends Error {
   constructor(
     message: string,
     public status: number,
