@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy.orm import Session
 
 from ..agent_schemas import (
@@ -20,6 +20,7 @@ from ..agent_service import (
 from ..dependencies import get_cipher, get_db, require_admin
 from ..models import User
 from ..security import SecretCipher
+from ..tls_certificates import resolve_agent_tls_files
 
 
 router = APIRouter(prefix="/agents", tags=["Agent 管理"])
@@ -28,6 +29,26 @@ router = APIRouter(prefix="/agents", tags=["Agent 管理"])
 @router.get("", response_model=List[AgentOutput])
 def get_agents(db: Session = Depends(get_db), _admin: User = Depends(require_admin)):
     return [serialize_agent(agent) for agent in list_agents(db)]
+
+
+@router.get("/ca")
+def download_ca(
+    request: Request,
+    _admin: User = Depends(require_admin),
+):
+    try:
+        ca_certificate = resolve_agent_tls_files(
+            request.app.state.settings
+        ).ca_certificate
+    except ValueError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    if not ca_certificate:
+        raise HTTPException(status_code=404, detail="当前 Server 未配置 Agent 公共 CA")
+    return Response(
+        content=ca_certificate.read_bytes(),
+        media_type="application/x-pem-file",
+        headers={"Content-Disposition": 'attachment; filename="service-monitor-ca.crt"'},
+    )
 
 
 @router.post("/{agent_id}/approve", response_model=AgentOutput)

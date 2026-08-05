@@ -15,6 +15,15 @@ ENROLLMENT = {
 }
 
 
+def test_admin_can_download_instance_ca(client, admin_headers):
+    response = client.get("/api/agents/ca", headers=admin_headers)
+
+    assert response.status_code == 200, response.text
+    assert response.headers["content-type"].startswith("application/x-pem-file")
+    assert "service-monitor-ca.crt" in response.headers["content-disposition"]
+    assert response.content.startswith(b"-----BEGIN CERTIFICATE-----")
+
+
 def enroll(agent_rpc, payload=None):
     response, context = agent_rpc.enroll(payload or ENROLLMENT)
     assert context.code.name == "OK", context.details

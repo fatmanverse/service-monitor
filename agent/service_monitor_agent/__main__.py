@@ -28,7 +28,11 @@ def main() -> int:
     )
     config = load_config(args.config)
     storage = AgentStorage(config.state_path)
-    client = AgentClient(config.center_url, config.ca_file)
+    client = AgentClient(
+        config.center_url,
+        config.ca_file,
+        tls_server_name=config.tls_server_name,
+    )
     try:
         AgentRuntime(config, storage, client).run_forever()
     except AgentAuthenticationError:

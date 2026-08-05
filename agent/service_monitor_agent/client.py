@@ -27,6 +27,7 @@ class AgentApprovalPending(AgentClientError):
 class AgentClient:
     center_url: str
     ca_file: Optional[str] = None
+    tls_server_name: Optional[str] = None
     timeout_seconds: int = 30
     channel: grpc.Channel = field(init=False, repr=False)
     stub: agent_pb2_grpc.AgentControlStub = field(init=False, repr=False)
@@ -34,7 +35,17 @@ class AgentClient:
     def __post_init__(self):
         root_certificates = Path(self.ca_file).read_bytes() if self.ca_file else None
         credentials = grpc.ssl_channel_credentials(root_certificates=root_certificates)
-        channel = grpc.secure_channel(_grpc_target(self.center_url), credentials)
+        options = (
+            (("grpc.ssl_target_name_override", self.tls_server_name),)
+            if self.tls_server_name
+            else None
+        )
+        if options:
+            channel = grpc.secure_channel(
+                _grpc_target(self.center_url), credentials, options=options
+            )
+        else:
+            channel = grpc.secure_channel(_grpc_target(self.center_url), credentials)
         object.__setattr__(self, "channel", channel)
         object.__setattr__(self, "stub", agent_pb2_grpc.AgentControlStub(channel))
 

@@ -12,12 +12,12 @@
 
 ## TodoCheckpointDraft
 
-- Active: Task 3 - Server instance TLS certificates and public CA.
-- Pending: Tasks 3-7.
-- Completed: Task 1 service lifecycle/history; Task 2 self-service password and token invalidation.
+- Active: Task 4 - release-root `start.sh`.
+- Pending: Tasks 4-7.
+- Completed: Tasks 1-3, including instance TLS CA and strict Agent server identity.
 - Evidence refs: approved spec/plan commits `ff9a990`, `303d4b0`; Task 1 targeted test and compile evidence in `90-evidence.md`.
 - Blockers: none.
-- Next: commit Task 2, then implement TLS certificate generation, strict identity and CA download.
+- Next: commit Task 3, then implement direct-run release script and bundle layout.
 
 ## Active Slice Card
 
@@ -45,6 +45,15 @@
 - Compatibility: old users preserved; password reset invalidates prior sessions.
 - New owner/fallback: no token blacklist or frontend fallback added.
 - Evidence: 26 targeted tests, compileall and diff check passed.
+- Decision: continue.
+
+## Task 3 Drift Check
+
+- Intent: aligned with instance-owned Agent TLS requirement.
+- Scope: certificate owner, gRPC wiring, CA route and Agent identity option only.
+- Compatibility: explicit cert/key deployments remain valid; missing partial material fails explicitly.
+- Security: no plaintext, shared private key, verification disable or fallback path added.
+- Evidence: backend 7 tests, Agent 6 tests, compileall and diff check passed.
 - Decision: continue.
 
 ## ResumeStateHint

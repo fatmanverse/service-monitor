@@ -12,6 +12,7 @@ except ImportError:
 class AgentConfig:
     center_url: str
     ca_file: Optional[str]
+    tls_server_name: Optional[str]
     heartbeat_interval: int
     state_path: str
 
@@ -28,6 +29,7 @@ def load_config(path: str) -> AgentConfig:
     return AgentConfig(
         center_url=center_url,
         ca_file=values.get("ca_file") or None,
+        tls_server_name=values.get("tls_server_name") or None,
         heartbeat_interval=interval,
         state_path=values.get("state_path", "/var/lib/service-monitor-agent/agent.db"),
     )

@@ -93,6 +93,7 @@ def client(tmp_path):
         initial_admin_username="admin",
         initial_admin_password="admin123",
         scheduler_enabled=False,
+        agent_grpc_cert_dir=str(tmp_path / "certs"),
         testing=True,
     )
     app = create_app(settings)

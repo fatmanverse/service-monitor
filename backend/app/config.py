@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     agent_grpc_bind: str = "[::]:50051"
     agent_grpc_cert_file: str = ""
     agent_grpc_key_file: str = ""
+    agent_grpc_ca_file: str = ""
+    agent_grpc_cert_dir: str = "./certs"
+    agent_grpc_tls_server_name: str = "service-monitor-server"
     testing: bool = False
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")

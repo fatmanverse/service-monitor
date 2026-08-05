@@ -36,6 +36,24 @@ class ClientTests(unittest.TestCase):
             "monitor.example:50051", ssl_channel_credentials.return_value
         )
 
+    @patch("service_monitor_agent.client.Path.read_bytes", return_value=b"ca")
+    @patch("service_monitor_agent.client.grpc.ssl_channel_credentials")
+    @patch("service_monitor_agent.client.grpc.secure_channel")
+    def test_generated_ca_can_validate_fixed_server_identity(
+        self, secure_channel, ssl_channel_credentials, _read_bytes
+    ):
+        AgentClient(
+            "grpcs://10.0.0.10:50051",
+            "/etc/service-monitor-agent/ca.crt",
+            tls_server_name="service-monitor-server",
+        )
+
+        secure_channel.assert_called_once_with(
+            "10.0.0.10:50051",
+            ssl_channel_credentials.return_value,
+            options=(("grpc.ssl_target_name_override", "service-monitor-server"),),
+        )
+
     @patch("service_monitor_agent.client.grpc.secure_channel")
     def test_authenticated_rpc_sets_agent_metadata(self, secure_channel):
         channel = Mock()
