@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ChevronRight, Pencil, Plus, Radar, Trash2 } from 'lucide-react'
+import { CheckCircle2, ChevronRight, PauseCircle, Pencil, Plus, Radar, Trash2, XCircle } from 'lucide-react'
 import { api, errorMessage } from '../api'
 import { AlertTargetPicker } from '../components/AlertTargetPicker'
 import { RuleEditor } from '../features/rules/RuleEditor'
@@ -19,7 +19,7 @@ import { formatDateTime } from '../lib/format'
 import type { AlertConfig, Host, Probe, ResourceGroup, Service } from '../types'
 import { StatusBadge, Tag } from '../ui/Badge'
 import { Button } from '../ui/Button'
-import { EmptyState, Notice, PageHeader } from '../ui/Display'
+import { EmptyState, Notice, PageHeader, StatCard, StatGrid } from '../ui/Display'
 import { CheckboxField, SelectField, TextareaField, TextField } from '../ui/Field'
 import { Modal } from '../ui/Modal'
 import { Toolbar, ToolbarCount, ToolbarSpacer } from '../ui/Toolbar'
@@ -158,6 +158,27 @@ export function ServicesPage({
           {[!hosts.length && '主机节点', !groups.length && '资源组'].filter(Boolean).join('、')}。
         </Notice>
       )}
+      <StatGrid>
+        <StatCard label="服务总数" value={services.length} icon={<Radar size={16} />} />
+        <StatCard
+          label="在线"
+          value={services.filter((service) => service.status === 'online').length}
+          tone="success"
+          icon={<CheckCircle2 size={16} />}
+        />
+        <StatCard
+          label="离线"
+          value={services.filter((service) => service.status === 'offline').length}
+          tone="danger"
+          icon={<XCircle size={16} />}
+        />
+        <StatCard
+          label="监控已停止"
+          value={services.filter((service) => !service.enabled).length}
+          tone="warning"
+          icon={<PauseCircle size={16} />}
+        />
+      </StatGrid>
       <Toolbar>
         <div className="toolbar-filter">
           <SelectField

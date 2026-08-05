@@ -12,12 +12,12 @@
 
 ## TodoCheckpointDraft
 
-- Active: Task 6 - account page, CA download and console visual optimization.
-- Pending: Tasks 6-7.
-- Completed: Tasks 1-5, including typed service detail route and history/result flow.
+- Active: Task 7 - retirement, documentation, ADR and full verification.
+- Pending: Task 7.
+- Completed: Tasks 1-6, including account/CA UI and light operational console optimization.
 - Evidence refs: approved spec/plan commits `ff9a990`, `303d4b0`; Task 1 targeted test and compile evidence in `90-evidence.md`.
 - Blockers: none.
-- Next: commit Task 5, then implement account/CA navigation and global UI cleanup.
+- Next: commit Task 6, then run retirement scan, update ADR/docs and execute full verification.
 
 ## Active Slice Card
 
@@ -73,6 +73,15 @@
 - Repair: enabling a stopped service now makes it immediately due at the canonical service update owner.
 - Retirement: list-level probe/result and direct start actions removed.
 - Evidence: frontend typecheck/build, backend 3 lifecycle tests and diff check passed.
+- Decision: continue.
+
+## Task 6 Drift Check
+
+- Intent: aligned with password access, CA distribution and deep UI optimization.
+- Scope: account route/page, authenticated CA download, service stats, shell/tokens and proven dead theme removal.
+- Compatibility: existing admin user page retained; account is additive for both roles.
+- Retirement: dark theme hook/toggle/token branch removed; no gradient/glass remnants.
+- Evidence: two fresh frontend typecheck/build runs, forbidden-style scan and diff check passed.
 - Decision: continue.
 
 ## ResumeStateHint

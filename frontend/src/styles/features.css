@@ -398,6 +398,90 @@
   font-size: var(--text-sm);
 }
 
+/* --- Account --- */
+
+.account-layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.7fr) minmax(420px, 1.3fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.account-identity,
+.account-panel {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+}
+
+.account-identity {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-5);
+}
+
+.account-avatar {
+  display: grid;
+  place-items: center;
+  width: var(--space-12);
+  height: var(--space-12);
+  border-radius: var(--radius-sm);
+  background: var(--accent-bg);
+  color: var(--accent-fg);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+}
+
+.account-identity > div {
+  min-width: 0;
+}
+
+.account-identity span,
+.account-identity p,
+.account-panel header p {
+  color: var(--fg-muted);
+  font-size: var(--text-sm);
+}
+
+.account-identity h2 {
+  margin: var(--space-1) 0;
+  overflow-wrap: anywhere;
+  font-size: var(--text-lg);
+}
+
+.account-identity > svg {
+  color: var(--success-fg);
+}
+
+.account-panel > header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.account-panel > header svg {
+  color: var(--accent-fg);
+}
+
+.account-panel h2 {
+  margin-bottom: var(--space-1);
+  font-size: var(--text-base);
+}
+
+.account-form {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-5);
+}
+
+.account-form .ui-button {
+  justify-self: start;
+}
+
 @media (max-width: 768px) {
   .card-grid {
     grid-template-columns: 1fr;
@@ -418,5 +502,9 @@
   .rule-leaf > .ui-button {
     grid-column: 2;
     justify-self: start;
+  }
+
+  .account-layout {
+    grid-template-columns: 1fr;
   }
 }

@@ -1,7 +1,7 @@
-import { BellRing, Cpu, FolderKanban, Server, ShieldCheck, Users } from 'lucide-react'
+import { BellRing, CircleUserRound, Cpu, FolderKanban, Server, ShieldCheck, Users } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
-export type SectionId = 'services' | 'hosts' | 'agents' | 'resources' | 'alerts' | 'users'
+export type SectionId = 'services' | 'hosts' | 'agents' | 'resources' | 'alerts' | 'users' | 'account'
 
 export interface AppRoute {
   section: SectionId
@@ -25,6 +25,7 @@ const NAVIGATION: NavigationItem[] = [
   { id: 'resources', label: '资源组', icon: FolderKanban, adminOnly: true, group: '配置' },
   { id: 'alerts', label: '告警管理', icon: BellRing, adminOnly: true, group: '配置' },
   { id: 'users', label: '用户管理', icon: Users, adminOnly: true, group: '配置' },
+  { id: 'account', label: '个人账号', icon: CircleUserRound, adminOnly: false, group: '配置' },
 ]
 
 export const NAVIGATION_GROUPS: NavigationGroup[] = ['监控', '配置']

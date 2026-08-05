@@ -167,6 +167,10 @@
   background: var(--bg-surface);
 }
 
+.detail-panel .probe-list {
+  gap: 0;
+}
+
 .detail-panel > header {
   display: flex;
   align-items: center;

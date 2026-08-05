@@ -3,6 +3,7 @@ import {
   CheckCircle2,
   Copy,
   Cpu,
+  Download,
   KeyRound,
   Link2,
   RotateCw,
@@ -152,6 +153,15 @@ export function AgentsPage() {
     toast({ tone: 'success', title: '密钥已复制' })
   }
 
+  async function downloadCa() {
+    try {
+      await api.downloadAgentCa()
+      toast({ tone: 'success', title: '公共 CA 已下载' })
+    } catch (error) {
+      toast({ tone: 'danger', title: '下载失败', detail: errorMessage(error) })
+    }
+  }
+
   const initialError = agents.error && !agents.data
 
   return (
@@ -159,6 +169,11 @@ export function AgentsPage() {
       <PageHeader
         title="Agent 接入"
         description="审批节点注册、绑定主机并管理每个 Agent 的独立认证密钥。"
+        actions={(
+          <Button icon={<Download size={16} />} onClick={() => void downloadCa()}>
+            下载公共 CA
+          </Button>
+        )}
       />
 
       <StatGrid>

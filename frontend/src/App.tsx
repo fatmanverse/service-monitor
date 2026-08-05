@@ -6,6 +6,7 @@ import { resolveRoute, type AppRoute } from './app/navigation'
 import { useHashRoute } from './hooks/useHashRoute'
 import { AgentsPage } from './pages/AgentsPage'
 import { AlertsPage } from './pages/AlertsPage'
+import { AccountPage } from './pages/AccountPage'
 import { HostsPage } from './pages/HostsPage'
 import { ResourceGroupsPage } from './pages/ResourceGroupsPage'
 import { ServicesPage } from './pages/ServicesPage'
@@ -18,10 +19,12 @@ function SectionView({
   route,
   user,
   navigate,
+  onPasswordChanged,
 }: {
   route: AppRoute
   user: User
   navigate: (next: string) => void
+  onPasswordChanged: () => void
 }) {
   if (route.section === 'services' && route.serviceId) {
     return (
@@ -43,6 +46,8 @@ function SectionView({
       return <AlertsPage />
     case 'users':
       return <UsersPage currentUserId={user.id} />
+    case 'account':
+      return <AccountPage user={user} onPasswordChanged={onPasswordChanged} />
     case 'services':
       return (
         <ServicesPage
@@ -94,7 +99,13 @@ export default function App() {
   return (
     <ToastProvider>
       <AppShell user={user} section={route.section} onNavigate={navigate} onLogout={logout}>
-        <SectionView key={hash} route={route} user={user} navigate={navigate} />
+        <SectionView
+          key={hash}
+          route={route}
+          user={user}
+          navigate={navigate}
+          onPasswordChanged={logout}
+        />
       </AppShell>
     </ToastProvider>
   )

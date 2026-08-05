@@ -46,6 +46,28 @@ export function clearToken() {
   localStorage.removeItem(TOKEN_KEY)
 }
 
+async function download(path: string, filename: string) {
+  const token = getToken()
+  const headers = new Headers()
+  if (token) headers.set('Authorization', `Bearer ${token}`)
+  const response = await fetch(`/api${path}`, { headers })
+  if (response.status === 401) {
+    clearToken()
+    onUnauthorized?.()
+    throw new ApiError('登录状态已失效，请重新登录。', 401)
+  }
+  if (!response.ok) {
+    const body = (await response.json().catch(() => ({}))) as ApiErrorBody
+    throw new ApiError(typeof body.detail === 'string' ? body.detail : '下载失败', response.status)
+  }
+  const url = URL.createObjectURL(await response.blob())
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = filename
+  anchor.click()
+  URL.revokeObjectURL(url)
+}
+
 let onUnauthorized: (() => void) | null = null
 
 /**
@@ -103,6 +125,8 @@ export const api = {
       skipUnauthorizedHandler: true,
     }),
   me: (options: ReadOptions = {}) => request<User>('/auth/me', options),
+  changePassword: (payload: object) =>
+    request<void>('/auth/password', { method: 'PUT', body: JSON.stringify(payload) }),
 
   hosts: (options: ReadOptions = {}) => request<Host[]>('/hosts', options),
   createHost: (payload: object) =>
@@ -150,6 +174,7 @@ export const api = {
   revokeAgent: (id: number) => request<Agent>(`/agents/${id}/revoke`, { method: 'POST' }),
   rotateAgentSecret: (id: number) =>
     request<AgentSecretRotation>(`/agents/${id}/rotate-secret`, { method: 'POST' }),
+  downloadAgentCa: () => download('/agents/ca', 'service-monitor-ca.crt'),
 
   alerts: (options: ReadOptions = {}) => request<AlertConfig[]>('/alerts', options),
   createAlert: (payload: object) =>

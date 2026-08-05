@@ -18,4 +18,7 @@
 - Task 5 frontend: `npm run typecheck --prefix frontend && npm run build --prefix frontend` -> passed; Vite built 1609 modules.
 - Task 5 backend lifecycle repair: targeted `test_api.py` selection -> 3 passed.
 - Task 5 diff hygiene -> exit 0.
-- Uncovered after Task 5: account/CA UI, global visual cleanup and full regression.
+- Task 6 frontend: `npm run typecheck --prefix frontend && npm run build --prefix frontend` -> passed twice; Vite built 1609 modules.
+- Task 6 style retirement scan: no gradient, backdrop-filter, color-mix, data-theme, useTheme or default-font remnants.
+- Task 6 diff hygiene -> exit 0.
+- Uncovered after Task 6: full regression, ADR/docs and final architecture review.

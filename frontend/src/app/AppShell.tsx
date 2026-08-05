@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
-import { LogOut, Menu, Moon, ShieldCheck, Sun, X } from 'lucide-react'
+import { LogOut, Menu, ShieldCheck, X } from 'lucide-react'
 import { Button } from '../ui/Button'
-import { useTheme } from '../hooks/useTheme'
 import {
   NAVIGATION_GROUPS,
   sectionLabel,
@@ -19,7 +18,6 @@ interface AppShellProps {
 }
 
 export function AppShell({ user, section, onNavigate, onLogout, children }: AppShellProps) {
-  const { theme, toggleTheme } = useTheme()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const navigation = visibleNavigation(user.is_admin)
 
@@ -118,15 +116,6 @@ export function AppShell({ user, section, onNavigate, onLogout, children }: AppS
           </span>
           <h2 className="topbar-title">{sectionLabel(section)}</h2>
           <div className="topbar-spacer" />
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleTheme}
-            aria-label={theme === 'dark' ? '切换到亮色主题' : '切换到暗色主题'}
-            title={theme === 'dark' ? '切换到亮色主题' : '切换到暗色主题'}
-          >
-            {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
-          </Button>
         </header>
         <main className="content">{children}</main>
       </div>
