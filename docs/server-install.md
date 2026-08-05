@@ -4,14 +4,16 @@
 
 发布 workflow 会构建：
 
+- `service-monitor-server-linux-x86_64-glibc217`
 - `service-monitor-server-linux-x86_64-glibc228`
+- `service-monitor-server-linux-arm64-glibc217`
 - `service-monitor-server-linux-arm64-glibc228`
 
 每个 tar 包包含后端二进制、SHA-256、systemd unit、环境变量模板和安装脚本。安装：
 
 ```bash
 tar -xzf service-monitor-server-*.tar.gz
-sudo ./install.sh service-monitor-server-linux-x86_64-glibc228
+sudo ./install.sh service-monitor-server-linux-x86_64-glibc217
 sudo editor /etc/service-monitor/service-monitor.env
 sudo systemctl start service-monitor-backend
 ```
