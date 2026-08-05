@@ -27,7 +27,7 @@ fi
 export LD_LIBRARY_PATH="$PYTHON_LIB_DIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
 set --
-if [ "$(uname -s)" = Linux ]; then
+if [ "$(uname -s)" = Linux ] && libcrypt_bundle_required "$ARTIFACT_NAME"; then
     LIBCRYPT_PATH=$(find_runtime_library libcrypt.so.2)
     set -- --add-binary "$LIBCRYPT_PATH:."
 fi

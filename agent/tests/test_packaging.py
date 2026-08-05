@@ -89,6 +89,22 @@ def test_finds_required_pyinstaller_runtime_library(tmp_path):
     assert result.stdout.strip() == str(library)
 
 
+def test_bundles_libcrypt_only_for_glibc217_artifacts():
+    glibc217 = subprocess.run(
+        ["sh", "-c", f'. "{PYINSTALLER_RUNTIME}"; libcrypt_bundle_required "$1"', "sh", "server-glibc217"],
+        capture_output=True,
+        text=True,
+    )
+    assert glibc217.returncode == 0
+
+    glibc228 = subprocess.run(
+        ["sh", "-c", f'. "{PYINSTALLER_RUNTIME}"; libcrypt_bundle_required "$1"', "sh", "server-glibc228"],
+        capture_output=True,
+        text=True,
+    )
+    assert glibc228.returncode != 0
+
+
 def test_rejects_missing_pyinstaller_runtime_library(tmp_path):
     result = subprocess.run(
         ["sh", "-c", f'. "{PYINSTALLER_RUNTIME}"; find_runtime_library libcrypt.so.2'],

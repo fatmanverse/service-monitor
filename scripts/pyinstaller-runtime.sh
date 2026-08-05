@@ -1,6 +1,13 @@
 #!/bin/sh
 set -eu
 
+libcrypt_bundle_required() {
+    case "$1" in
+        *-glibc217) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
 find_runtime_library() {
     library=$1
 
