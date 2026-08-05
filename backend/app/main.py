@@ -12,6 +12,7 @@ from .database import Database
 from .models import User
 from .migrations import migrate_database
 from .monitoring import MonitoringService
+from .probe_log_retention import purge_expired_probe_logs
 from .routers import (
     agent_commands,
     agents,
@@ -48,6 +49,7 @@ def create_app(settings: Settings = None) -> FastAPI:
     async def lifespan(app: FastAPI):
         migrate_database(database)
         with database.session_factory() as db:
+            purge_expired_probe_logs(db)
             admin = db.scalar(
                 select(User).where(User.username == resolved_settings.initial_admin_username)
             )

@@ -9,6 +9,7 @@ from sqlalchemy.orm import joinedload, selectinload
 from .database import Database
 from .models import Agent, Host, Service
 from .monitoring import MonitoringService, ProbeResult
+from .probe_log_retention import purge_expired_probe_logs
 
 
 logger = logging.getLogger(__name__)
@@ -30,6 +31,14 @@ class MonitorScheduler:
 
     def start(self) -> None:
         self.scheduler.add_job(
+            self.purge_probe_logs,
+            "interval",
+            days=1,
+            id="purge-expired-probe-logs",
+            max_instances=1,
+            coalesce=True,
+        )
+        self.scheduler.add_job(
             self.run_due_checks,
             "interval",
             seconds=15,
@@ -38,6 +47,12 @@ class MonitorScheduler:
             coalesce=True,
         )
         self.scheduler.start()
+
+    def purge_probe_logs(self) -> None:
+        with self.database.session_factory() as db:
+            deleted = purge_expired_probe_logs(db)
+        if deleted:
+            logger.info("Purged %s expired probe logs", deleted)
 
     def shutdown(self) -> None:
         if self.scheduler.running:

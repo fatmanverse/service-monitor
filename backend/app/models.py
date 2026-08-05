@@ -129,7 +129,7 @@ class Service(Base):
     start_command: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     start_user: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     check_interval: Mapped[int] = mapped_column(Integer, default=60)
-    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     auto_restart: Mapped[bool] = mapped_column(Boolean, default=False)
     alert_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     status: Mapped[str] = mapped_column(String(16), default="unknown")

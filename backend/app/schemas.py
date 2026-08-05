@@ -184,7 +184,7 @@ class ServiceBase(BaseModel):
     start_command: Optional[str] = None
     start_user: Optional[str] = Field(default=None, max_length=100)
     check_interval: int = Field(default=60, ge=60, le=86400)
-    enabled: bool = True
+    enabled: bool = False
     auto_restart: bool = False
     alert_config_ids: List[int] = Field(default_factory=list)
 
@@ -250,6 +250,15 @@ class ProbeResultOutput(BaseModel):
     restarted: bool = False
     command_id: Optional[str] = None
     command_status: Optional[str] = None
+    probes: List["ProbeItemResultOutput"] = Field(default_factory=list)
+
+
+class ProbeItemResultOutput(BaseModel):
+    key: str
+    name: str
+    success: bool
+    message: str
+    response_ms: Optional[int] = None
 
 
 class ProbeLogOutput(BaseModel):
@@ -260,6 +269,11 @@ class ProbeLogOutput(BaseModel):
     message: str
     response_ms: Optional[int]
     checked_at: datetime
+
+
+class ProbeLogPageOutput(BaseModel):
+    items: List[ProbeLogOutput]
+    next_cursor: Optional[str] = None
 
 
 class AlertConfigCreate(BaseModel):

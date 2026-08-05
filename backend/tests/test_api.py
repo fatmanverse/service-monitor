@@ -1,3 +1,6 @@
+from datetime import datetime, timedelta
+
+
 def create_host(client, headers, name="node-a", alert_config_ids=None):
     response = client.post(
         "/api/hosts",
@@ -68,6 +71,143 @@ def test_admin_can_create_host_and_service(client, admin_headers):
     assert service["probes"][0]["headers"] == {"X-Monitor": "true"}
     assert service["health_rule"] == {"probe": "http-main"}
     assert service["alert_configs"] == []
+
+
+def test_new_service_defaults_to_stopped_monitoring(client, admin_headers):
+    host = create_host(client, admin_headers, name="default-disabled-host")
+    group = create_group(client, admin_headers, "default-disabled-group")
+
+    response = client.post(
+        "/api/services",
+        headers=admin_headers,
+        json={
+            "host_id": host["id"],
+            "resource_group_id": group["id"],
+            "name": "default-disabled-service",
+            "probes": [
+                {
+                    "key": "http-main",
+                    "name": "主地址",
+                    "probe_type": "get",
+                    "url": "http://127.0.0.1:9999/health",
+                }
+            ],
+            "health_rule": {"probe": "http-main"},
+        },
+    )
+
+    assert response.status_code == 201, response.text
+    assert response.json()["enabled"] is False
+
+
+def test_manual_probe_never_auto_restarts_and_returns_probe_results(
+    client, admin_headers, monkeypatch
+):
+    from app.monitoring import ProbeResult
+
+    host = create_host(client, admin_headers, name="manual-probe-host")
+    service = create_service(client, admin_headers, host["id"], name="manual-probe")
+    calls = []
+
+    def fake_check(_db, loaded_service, allow_restart):
+        calls.append((loaded_service.id, allow_restart))
+        return ProbeResult(
+            False,
+            "在线规则不满足",
+            17,
+            probe_results={
+                "http-main": ProbeResult(False, "HTTP 连接失败", 17)
+            },
+        )
+
+    monkeypatch.setattr(client.app.state.monitoring, "check_service", fake_check)
+
+    response = client.post(
+        f"/api/services/{service['id']}/probe",
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 200, response.text
+    assert calls == [(service["id"], False)]
+    assert response.json()["probes"] == [
+        {
+            "key": "http-main",
+            "name": "主地址",
+            "success": False,
+            "message": "HTTP 连接失败",
+            "response_ms": 17,
+        }
+    ]
+
+
+def test_service_logs_are_cursor_paginated_and_retained_for_30_days(
+    client, admin_headers
+):
+    from sqlalchemy import func, select
+
+    from app.models import ProbeLog
+    from app.probe_log_retention import purge_expired_probe_logs
+
+    host = create_host(client, admin_headers, name="history-host")
+    service = create_service(client, admin_headers, host["id"], name="history-service")
+    now = datetime.utcnow()
+    with client.app.state.database.session_factory() as db:
+        db.add(
+            ProbeLog(
+                service_id=service["id"],
+                success=False,
+                message="expired",
+                checked_at=now - timedelta(days=31),
+            )
+        )
+        for index in range(51):
+            db.add(
+                ProbeLog(
+                    service_id=service["id"],
+                    success=True,
+                    message=f"recent-{index}",
+                    checked_at=now - timedelta(minutes=index),
+                )
+            )
+        db.commit()
+
+    first = client.get(
+        f"/api/services/{service['id']}/logs?limit=50",
+        headers=admin_headers,
+    )
+    assert first.status_code == 200, first.text
+    assert len(first.json()["items"]) == 50
+    assert first.json()["next_cursor"]
+    assert all(item["message"] != "expired" for item in first.json()["items"])
+
+    second = client.get(
+        f"/api/services/{service['id']}/logs",
+        headers=admin_headers,
+        params={"limit": 50, "cursor": first.json()["next_cursor"]},
+    )
+    assert second.status_code == 200, second.text
+    assert [item["message"] for item in second.json()["items"]] == ["recent-50"]
+    assert second.json()["next_cursor"] is None
+
+    with client.app.state.database.session_factory() as db:
+        assert purge_expired_probe_logs(db, now=now) == 1
+        expired_count = db.scalar(
+            select(func.count(ProbeLog.id)).where(ProbeLog.message == "expired")
+        )
+    assert expired_count == 0
+
+
+def test_service_logs_reject_invalid_cursor(client, admin_headers):
+    host = create_host(client, admin_headers, name="invalid-cursor-host")
+    service = create_service(client, admin_headers, host["id"], name="invalid-cursor")
+
+    response = client.get(
+        f"/api/services/{service['id']}/logs?cursor=not-a-cursor",
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "无效的历史记录游标"
 
 
 def create_alert(client, headers, name):

@@ -1,7 +1,7 @@
 import json
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload, selectinload
@@ -10,15 +10,50 @@ from ..dependencies import get_cipher, get_current_user, get_db, get_monitor, re
 from ..alert_targets import resolve_alert_configs
 from ..agent_protocol import bump_agent_config_revision, queue_agent_command
 from ..health_rules import HealthRuleError, validate_rule
-from ..models import Host, ProbeLog, ResourceGroup, Service, ServiceProbe, User, UserResourceGroup
+from ..models import Host, ResourceGroup, Service, ServiceProbe, User, UserResourceGroup
 from ..monitoring import MonitoringService
-from ..schemas import ProbeLogOutput, ProbeResultOutput, ServiceCreate, ServiceOutput, ServiceProbeInput, ServiceUpdate
+from ..probe_log_retention import list_probe_logs
+from ..schemas import (
+    ProbeItemResultOutput,
+    ProbeLogPageOutput,
+    ProbeResultOutput,
+    ServiceCreate,
+    ServiceOutput,
+    ServiceProbeInput,
+    ServiceUpdate,
+)
 from ..security import SecretCipher
 from ..serializers import service_output
 from ..start_commands import validate_start_user
 
 
 router = APIRouter(prefix="/services", tags=["服务"])
+
+
+def probe_result_output(result, service: Service) -> ProbeResultOutput:
+    probes = []
+    result_by_key = result.probe_results or {}
+    for probe in service.probes:
+        probe_result = result_by_key.get(probe.key)
+        if not probe_result:
+            continue
+        probes.append(
+            ProbeItemResultOutput(
+                key=probe.key,
+                name=probe.name,
+                success=probe_result.success,
+                message=probe_result.message,
+                response_ms=probe_result.response_ms,
+            )
+        )
+    return ProbeResultOutput(
+        success=result.success,
+        status=result.status,
+        message=result.message,
+        response_ms=result.response_ms,
+        restarted=result.restarted,
+        probes=probes,
+    )
 
 
 def service_load_options():
@@ -300,8 +335,8 @@ def probe_service(
             command_id=command.command_id,
             command_status=command.status,
         )
-    result = monitor.check_service(db, service, allow_restart=current_user.is_admin)
-    return ProbeResultOutput(success=result.success, status=result.status, message=result.message, response_ms=result.response_ms, restarted=result.restarted)
+    result = monitor.check_service(db, service, allow_restart=False)
+    return probe_result_output(result, service)
 
 
 @router.post("/{service_id}/restart", response_model=ProbeResultOutput)
@@ -331,10 +366,20 @@ def restart_service(
             command_status=command.status,
         )
     result = monitor.restart_and_check(db, service)
-    return ProbeResultOutput(success=result.success, status=result.status, message=result.message, response_ms=result.response_ms, restarted=result.restarted)
+    return probe_result_output(result, service)
 
 
-@router.get("/{service_id}/logs", response_model=List[ProbeLogOutput])
-def service_logs(service_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+@router.get("/{service_id}/logs", response_model=ProbeLogPageOutput)
+def service_logs(
+    service_id: int,
+    limit: int = Query(default=50, ge=1, le=100),
+    cursor: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     get_visible_service(db, service_id, current_user)
-    return db.scalars(select(ProbeLog).where(ProbeLog.service_id == service_id).order_by(ProbeLog.checked_at.desc()).limit(100)).all()
+    try:
+        page = list_probe_logs(db, service_id, limit, cursor)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return ProbeLogPageOutput(items=page.items, next_cursor=page.next_cursor)
