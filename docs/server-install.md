@@ -18,4 +18,6 @@ sudo editor /etc/service-monitor/service-monitor.env
 sudo systemctl start service-monitor-backend
 ```
 
+安装器会校验主机 CPU 架构、glibc 版本和二进制 `--self-test`，不匹配时不会替换已安装的 Server。`uname -m` 输出 `x86_64` 时选择 `x86_64` 产物，输出 `aarch64` 时选择 `arm64` 产物。
+
 默认只启动 FastAPI 管理 API；如果要同时启动 Agent gRPC 控制面，配置 `AGENT_GRPC_ENABLED=true`，并提供 `AGENT_GRPC_CERT_FILE` 与 `AGENT_GRPC_KEY_FILE`。

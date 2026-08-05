@@ -3,12 +3,20 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PLATFORM = ROOT / "packaging" / "platform.sh"
+PLATFORM = ROOT.parent / "scripts" / "platform.sh"
 
 
-def select(architecture, libc):
+def select(product, architecture, libc):
     result = subprocess.run(
-        ["sh", "-c", f'. "{PLATFORM}"; select_artifact "$1" "$2"', "sh", architecture, libc],
+        [
+            "sh",
+            "-c",
+            f'. "{PLATFORM}"; select_artifact_for "$1" "$2" "$3"',
+            "sh",
+            product,
+            architecture,
+            libc,
+        ],
         check=True,
         capture_output=True,
         text=True,
@@ -17,12 +25,12 @@ def select(architecture, libc):
 
 
 def test_selects_exact_architecture_and_oldest_compatible_glibc():
-    assert select("x86_64", "2.17") == "service-monitor-agent-linux-x86_64-glibc217"
-    assert select("aarch64", "2.28") == "service-monitor-agent-linux-arm64-glibc228"
+    assert select("agent", "x86_64", "2.17") == "service-monitor-agent-linux-x86_64-glibc217"
+    assert select("server", "aarch64", "2.28") == "service-monitor-server-linux-arm64-glibc228"
 
 
 def test_selects_glibc228_for_newer_glibc():
-    assert select("amd64", "2.34") == "service-monitor-agent-linux-x86_64-glibc228"
+    assert select("agent", "amd64", "2.34") == "service-monitor-agent-linux-x86_64-glibc228"
 
 
 def test_rejects_unsupported_architecture_and_libc():
@@ -34,3 +42,34 @@ def test_rejects_unsupported_architecture_and_libc():
         )
         assert result.returncode != 0
 
+
+def compatible(product, artifact, architecture, libc):
+    return subprocess.run(
+        [
+            "sh",
+            "-c",
+            f'. "{PLATFORM}"; artifact_is_compatible "$1" "$2" "$3" "$4"',
+            "sh",
+            product,
+            artifact,
+            architecture,
+            libc,
+        ],
+        capture_output=True,
+        text=True,
+    )
+
+
+def test_accepts_older_glibc_baseline_on_newer_host():
+    result = compatible("server", "service-monitor-server-linux-x86_64-glibc217", "x86_64", "2.34")
+    assert result.returncode == 0
+
+
+def test_rejects_wrong_architecture_or_newer_glibc_baseline():
+    wrong_arch = compatible("server", "service-monitor-server-linux-arm64-glibc217", "x86_64", "2.34")
+    assert wrong_arch.returncode != 0
+    assert "架构" in wrong_arch.stderr
+
+    newer_glibc = compatible("server", "service-monitor-server-linux-x86_64-glibc228", "x86_64", "2.17")
+    assert newer_glibc.returncode != 0
+    assert "glibc" in newer_glibc.stderr

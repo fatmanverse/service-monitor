@@ -13,7 +13,7 @@ CONFIG_DIR=/etc/service-monitor-agent
 STATE_DIR=/var/lib/service-monitor-agent
 UNIT_PATH=/etc/systemd/system/service-monitor-agent.service
 
-# shellcheck source=agent/packaging/platform.sh
+# shellcheck source=scripts/platform.sh
 . "$SCRIPT_DIR/platform.sh"
 
 architecture=$(uname -m)

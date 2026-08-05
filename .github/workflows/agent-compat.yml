@@ -4,12 +4,16 @@ on:
   pull_request:
     paths:
       - "agent/**"
+      - "scripts/build-shared-python.sh"
+      - "scripts/platform.sh"
       - ".github/workflows/agent-*.yml"
   push:
     branches:
       - main
     paths:
       - "agent/**"
+      - "scripts/build-shared-python.sh"
+      - "scripts/platform.sh"
       - ".github/workflows/agent-*.yml"
 
 permissions:
@@ -48,7 +52,7 @@ jobs:
           platforms: arm64
       - name: Validate packaging scripts
         run: |
-          sh -n agent/packaging/platform.sh agent/packaging/build.sh agent/packaging/install.sh agent/packaging/uninstall.sh
+          sh -n scripts/platform.sh agent/packaging/build.sh agent/packaging/install.sh agent/packaging/uninstall.sh
           PYTHONPATH=agent python3 -m pytest agent/tests/test_packaging.py -q
       - name: Validate target image libc baseline
         run: |

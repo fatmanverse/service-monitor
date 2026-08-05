@@ -59,7 +59,8 @@ jobs:
           mkdir -p "release/$ARTIFACT_NAME"
           cp "dist/agent/$ARTIFACT_NAME" "release/$ARTIFACT_NAME/"
           cp "dist/agent/$ARTIFACT_NAME.sha256" "release/$ARTIFACT_NAME/"
-          cp agent/packaging/{platform.sh,install.sh,uninstall.sh,service-monitor-agent.service} "release/$ARTIFACT_NAME/"
+          cp scripts/platform.sh "release/$ARTIFACT_NAME/"
+          cp agent/packaging/{install.sh,uninstall.sh,service-monitor-agent.service} "release/$ARTIFACT_NAME/"
           tar -C "release/$ARTIFACT_NAME" -czf "release/$ARTIFACT_NAME.tar.gz" .
           (cd release && sha256sum "$ARTIFACT_NAME.tar.gz" > "$ARTIFACT_NAME.tar.gz.sha256")
 
