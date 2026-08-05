@@ -210,6 +210,57 @@ def test_service_logs_reject_invalid_cursor(client, admin_headers):
     assert response.json()["detail"] == "无效的历史记录游标"
 
 
+def test_user_can_change_password_and_old_token_is_revoked(client, admin_headers):
+    rejected = client.put(
+        "/api/auth/password",
+        headers=admin_headers,
+        json={
+            "current_password": "wrong-password",
+            "new_password": "new-admin-password",
+            "confirm_password": "new-admin-password",
+        },
+    )
+    assert rejected.status_code == 400
+    assert rejected.json()["detail"] == "当前密码不正确"
+
+    changed = client.put(
+        "/api/auth/password",
+        headers=admin_headers,
+        json={
+            "current_password": "admin123",
+            "new_password": "new-admin-password",
+            "confirm_password": "new-admin-password",
+        },
+    )
+    assert changed.status_code == 204, changed.text
+    assert client.get("/api/auth/me", headers=admin_headers).status_code == 401
+
+    old_login = client.post(
+        "/api/auth/login",
+        json={"username": "admin", "password": "admin123"},
+    )
+    new_login = client.post(
+        "/api/auth/login",
+        json={"username": "admin", "password": "new-admin-password"},
+    )
+    assert old_login.status_code == 401
+    assert new_login.status_code == 200
+
+
+def test_password_change_rejects_mismatched_confirmation(client, admin_headers):
+    response = client.put(
+        "/api/auth/password",
+        headers=admin_headers,
+        json={
+            "current_password": "admin123",
+            "new_password": "new-admin-password",
+            "confirm_password": "different-password",
+        },
+    )
+
+    assert response.status_code == 422
+
+
 def create_alert(client, headers, name):
     response = client.post(
         "/api/alerts",

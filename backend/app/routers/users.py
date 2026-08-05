@@ -48,6 +48,7 @@ def update_user(user_id: int, payload: UserUpdate, db: Session = Depends(get_db)
         setattr(user, key, value)
     if password:
         user.password_hash = hash_password(password)
+        user.token_version += 1
     db.commit()
     db.refresh(user)
     return user

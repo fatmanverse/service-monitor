@@ -7,4 +7,6 @@
 - Task 1 targeted regression: `backend/.venv/bin/python -m pytest -q tests/test_api.py tests/test_agent_reports.py` from `backend/` -> 25 passed.
 - Task 1 static compile: `backend/.venv/bin/python -m compileall -q backend/app` -> exit 0.
 - Task 1 diff hygiene: `rtk git diff --check` -> exit 0.
-- Uncovered after Task 1: password, TLS, packaging, frontend and full regression.
+- Task 2 targeted regression: `backend/.venv/bin/python -m pytest -q tests/test_api.py tests/test_agent_migrations.py` from `backend/` -> 26 passed.
+- Task 2 static compile and diff hygiene -> exit 0.
+- Uncovered after Task 2: TLS, packaging, frontend and full regression.

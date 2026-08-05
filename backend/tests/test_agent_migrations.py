@@ -75,6 +75,16 @@ def create_pre_agent_database(path):
         CREATE INDEX ix_services_resource_group_id ON services (resource_group_id);
         CREATE INDEX ix_services_next_check_at ON services (next_check_at);
 
+        CREATE TABLE users (
+            id INTEGER PRIMARY KEY,
+            username VARCHAR(64) NOT NULL UNIQUE,
+            password_hash VARCHAR(255) NOT NULL,
+            is_admin BOOLEAN NOT NULL DEFAULT 0,
+            is_active BOOLEAN NOT NULL DEFAULT 1,
+            created_at DATETIME NOT NULL
+        );
+        CREATE UNIQUE INDEX ix_users_username ON users (username);
+
         CREATE TABLE service_probes (
             id INTEGER PRIMARY KEY,
             service_id INTEGER NOT NULL REFERENCES services(id) ON DELETE CASCADE,
@@ -172,6 +182,10 @@ def create_pre_agent_database(path):
         "INSERT INTO probe_logs VALUES (1, 1, 1, 'legacy-ok', 12, ?)",
         (now,),
     )
+    connection.execute(
+        "INSERT INTO users VALUES (1, 'legacy-admin', 'legacy-hash', 1, 1, ?)",
+        (now,),
+    )
     connection.executemany(
         "INSERT INTO app_migrations VALUES (?, ?)",
         [
@@ -194,9 +208,11 @@ def test_pre_agent_database_migrates_without_data_loss(tmp_path):
     inspector = inspect(database.engine)
     host_columns = {column["name"]: column for column in inspector.get_columns("hosts")}
     service_columns = {column["name"]: column for column in inspector.get_columns("services")}
+    user_columns = {column["name"]: column for column in inspector.get_columns("users")}
     assert host_columns["execution_mode"]["nullable"] is False
     assert host_columns["port"]["nullable"] is True
     assert service_columns["start_user"]["nullable"] is True
+    assert user_columns["token_version"]["nullable"] is False
     assert {"agents", "agent_commands", "agent_report_receipts"} <= set(inspector.get_table_names())
 
     with database.session_factory() as db:
@@ -207,6 +223,7 @@ def test_pre_agent_database_migrates_without_data_loss(tmp_path):
         assert host.username == "legacy-user"
         assert host.password_encrypted == "encrypted-password"
         assert service.start_user is None
+        assert db.execute(text("SELECT token_version FROM users WHERE id = 1")).scalar_one() == 0
         assert db.get(ProbeLog, 1).message == "legacy-ok"
         assert db.query(Agent).count() == 0
         assert db.query(AgentCommand).count() == 0

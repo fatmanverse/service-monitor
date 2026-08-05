@@ -25,6 +25,7 @@ def migrate_database(database: Database) -> None:
     database.create_all()
     inspector = inspect(database.engine)
     host_columns = {column["name"]: column for column in inspector.get_columns("hosts")}
+    user_columns = {column["name"] for column in inspector.get_columns("users")}
     service_columns = {column["name"] for column in inspector.get_columns("services")}
     alert_columns = {column["name"] for column in inspector.get_columns("alert_configs")}
     with database.engine.begin() as connection:
@@ -50,6 +51,10 @@ def migrate_database(database: Database) -> None:
             )
         if "start_user" not in service_columns:
             connection.execute(text("ALTER TABLE services ADD COLUMN start_user VARCHAR(100)"))
+        if "token_version" not in user_columns:
+            connection.execute(
+                text("ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0")
+            )
     if not host_columns["port"]["nullable"]:
         _rebuild_hosts_with_nullable_port(database)
     with database.session_factory() as db:

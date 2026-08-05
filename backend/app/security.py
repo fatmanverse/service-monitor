@@ -33,14 +33,18 @@ def verify_password(password: str, encoded: str) -> bool:
         return False
 
 
-def create_access_token(user_id: int, settings: Settings) -> str:
+def create_access_token(user_id: int, token_version: int, settings: Settings) -> str:
     expires_at = datetime.utcnow() + timedelta(minutes=settings.access_token_minutes)
-    return jwt.encode({"sub": str(user_id), "exp": expires_at}, settings.app_secret, algorithm="HS256")
+    return jwt.encode(
+        {"sub": str(user_id), "ver": token_version, "exp": expires_at},
+        settings.app_secret,
+        algorithm="HS256",
+    )
 
 
-def decode_access_token(token: str, settings: Settings) -> int:
+def decode_access_token(token: str, settings: Settings) -> tuple[int, int]:
     payload = jwt.decode(token, settings.app_secret, algorithms=["HS256"])
-    return int(payload["sub"])
+    return int(payload["sub"]), int(payload["ver"])
 
 
 class SecretCipher:
@@ -57,4 +61,3 @@ class SecretCipher:
         if not value:
             return None
         return self.fernet.decrypt(value.encode()).decode()
-

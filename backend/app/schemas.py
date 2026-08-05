@@ -9,6 +9,20 @@ class LoginInput(BaseModel):
     password: str
 
 
+class PasswordChangeInput(BaseModel):
+    current_password: str = Field(min_length=1, max_length=128)
+    new_password: str = Field(min_length=8, max_length=128)
+    confirm_password: str = Field(min_length=8, max_length=128)
+
+    @model_validator(mode="after")
+    def validate_passwords(self):
+        if self.new_password != self.confirm_password:
+            raise ValueError("两次输入的新密码不一致")
+        if self.new_password == self.current_password:
+            raise ValueError("新密码不能与当前密码相同")
+        return self
+
+
 class TokenOutput(BaseModel):
     access_token: str
     token_type: str = "bearer"

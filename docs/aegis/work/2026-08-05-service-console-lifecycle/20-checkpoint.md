@@ -12,12 +12,12 @@
 
 ## TodoCheckpointDraft
 
-- Active: Task 2 - user self-service password change and token invalidation.
-- Pending: Tasks 2-7.
-- Completed: Task 1 service lifecycle and 30-day history contract.
+- Active: Task 3 - Server instance TLS certificates and public CA.
+- Pending: Tasks 3-7.
+- Completed: Task 1 service lifecycle/history; Task 2 self-service password and token invalidation.
 - Evidence refs: approved spec/plan commits `ff9a990`, `303d4b0`; Task 1 targeted test and compile evidence in `90-evidence.md`.
 - Blockers: none.
-- Next: commit Task 1, then implement auth token-version migration and password endpoint.
+- Next: commit Task 2, then implement TLS certificate generation, strict identity and CA download.
 
 ## Active Slice Card
 
@@ -36,6 +36,15 @@
 - Compatibility: old enabled values and API URLs preserved; only new create defaults changed.
 - Retirement: `/probe` automatic start path removed; `/restart` remains explicit admin action.
 - Evidence: targeted tests, compileall and diff check passed.
+- Decision: continue.
+
+## Task 2 Drift Check
+
+- Intent: aligned with self-service password requirement.
+- Scope: auth/security/user migration only.
+- Compatibility: old users preserved; password reset invalidates prior sessions.
+- New owner/fallback: no token blacklist or frontend fallback added.
+- Evidence: 26 targeted tests, compileall and diff check passed.
 - Decision: continue.
 
 ## ResumeStateHint
