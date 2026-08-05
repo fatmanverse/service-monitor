@@ -76,7 +76,7 @@ jobs:
           mkdir -p "release/$ARTIFACT_NAME"
           cp "dist/server/$ARTIFACT_NAME" "dist/server/$ARTIFACT_NAME.sha256" "release/$ARTIFACT_NAME/"
           cp scripts/platform.sh "release/$ARTIFACT_NAME/"
-          cp backend/packaging/{install.sh,service-monitor-backend.service,service-monitor.env.example} "release/$ARTIFACT_NAME/"
+          cp backend/packaging/{install.sh,start.sh,service-monitor-backend.service,service-monitor.env.example} "release/$ARTIFACT_NAME/"
           tar -C "release/$ARTIFACT_NAME" -czf "release/$ARTIFACT_NAME.tar.gz" .
           (cd release && sha256sum "$ARTIFACT_NAME.tar.gz" > "$ARTIFACT_NAME.tar.gz.sha256")
       - uses: actions/upload-artifact@v4

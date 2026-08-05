@@ -12,4 +12,7 @@
 - Task 3 backend TLS regression: `backend/.venv/bin/python -m pytest -q tests/test_agent_grpc_integration.py tests/test_agent_enrollment.py` -> 7 passed.
 - Task 3 Agent TLS regression: `agent/.venv/bin/python -m pytest -q tests/test_client.py tests/test_grpc_client_contract.py` -> 6 passed.
 - Task 3 backend/Agent compileall and diff hygiene -> exit 0.
-- Uncovered after Task 3: packaging, frontend and full regression.
+- Task 4 packaging behavior: `backend/.venv/bin/python -m pytest -q tests/test_packaging_layout.py` -> 3 passed.
+- Task 4 shell validation: `shellcheck backend/packaging/start.sh backend/packaging/install.sh scripts/platform.sh` -> exit 0.
+- Task 4 diff hygiene -> exit 0.
+- Uncovered after Task 4: frontend and full regression.

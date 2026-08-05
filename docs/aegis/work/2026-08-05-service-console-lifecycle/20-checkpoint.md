@@ -12,12 +12,12 @@
 
 ## TodoCheckpointDraft
 
-- Active: Task 4 - release-root `start.sh`.
-- Pending: Tasks 4-7.
-- Completed: Tasks 1-3, including instance TLS CA and strict Agent server identity.
+- Active: Task 5 - frontend route, service detail and manual result flow.
+- Pending: Tasks 5-7.
+- Completed: Tasks 1-4, including release-root direct-run `start.sh`.
 - Evidence refs: approved spec/plan commits `ff9a990`, `303d4b0`; Task 1 targeted test and compile evidence in `90-evidence.md`.
 - Blockers: none.
-- Next: commit Task 3, then implement direct-run release script and bundle layout.
+- Next: commit Task 4, then implement typed service detail route and UI data flow.
 
 ## Active Slice Card
 
@@ -54,6 +54,15 @@
 - Compatibility: explicit cert/key deployments remain valid; missing partial material fails explicitly.
 - Security: no plaintext, shared private key, verification disable or fallback path added.
 - Evidence: backend 7 tests, Agent 6 tests, compileall and diff check passed.
+- Decision: continue.
+
+## Task 4 Drift Check
+
+- Intent: aligned with current-directory direct startup requirement.
+- Scope: release script, environment template, workflow bundle, packaging test and docs.
+- Compatibility: `install.sh` and source `scripts/start.sh` retained unchanged.
+- Security: random secrets use `/dev/urandom`; env is `0600`; existing DB without env fails explicitly.
+- Evidence: 3 packaging tests, shellcheck and diff check passed.
 - Decision: continue.
 
 ## ResumeStateHint
