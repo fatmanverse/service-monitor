@@ -8,7 +8,7 @@ interface UseAsyncResourceOptions {
   enabled?: boolean
 }
 
-export interface AsyncResource<T> {
+interface AsyncResource<T> {
   data: T | null
   /** True only before the first successful load, so pages can show a skeleton. */
   initialLoading: boolean

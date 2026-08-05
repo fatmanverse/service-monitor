@@ -125,17 +125,3 @@ function pruneRule(
   if (children.length === 1) return children[0]
   return { ...rule, children }
 }
-
-/** Renders the rule as readable Chinese, e.g. `进程存活 且 (HTTP 或 健康检查)`. */
-export function describeRule(rule: HealthRule, probes: RuleProbe[]): string {
-  if (isLeaf(rule)) return probeLabel(rule.probe, probes)
-  return formatGroup(rule, probes, false)
-}
-
-function formatGroup(rule: HealthRule, probes: RuleProbe[], nested: boolean): string {
-  if (isLeaf(rule)) return probeLabel(rule.probe, probes)
-  const joined = rule.children
-    .map((child) => formatGroup(child, probes, true))
-    .join(rule.op === 'AND' ? ' 且 ' : ' 或 ')
-  return nested ? `(${joined})` : joined
-}

@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useMemo, useRef, useState } fro
 import { AlertTriangle, CheckCircle2, Info } from 'lucide-react'
 import type { ReactNode } from 'react'
 
-export type ToastTone = 'success' | 'danger' | 'info'
+type ToastTone = 'success' | 'danger' | 'info'
 
 interface Toast {
   id: number

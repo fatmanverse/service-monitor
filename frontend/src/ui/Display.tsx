@@ -91,16 +91,6 @@ export function TableSkeleton({ rows = 5 }: { rows?: number }) {
   )
 }
 
-export function CardSkeleton({ count = 3 }: { count?: number }) {
-  return (
-    <div className="card-grid" aria-hidden>
-      {Array.from({ length: count }, (_, index) => (
-        <div key={index} className="skeleton skeleton-card" />
-      ))}
-    </div>
-  )
-}
-
 export function StatGrid({ children }: { children: ReactNode }) {
   return <div className="stat-grid">{children}</div>
 }

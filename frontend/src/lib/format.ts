@@ -46,30 +46,3 @@ export function formatRelativeTime(value?: string | null, now = Date.now()): str
   if (elapsed < 30 * DAY_MS) return `${Math.floor(elapsed / DAY_MS)} 天前`
   return formatDateTime(value)
 }
-
-/**
- * True when a check is overdue by more than two intervals, meaning the displayed
- * status may no longer reflect reality.
- */
-export function isStale(
-  lastCheckedAt: string | null | undefined,
-  checkIntervalSeconds: number,
-  now = Date.now(),
-): boolean {
-  if (!lastCheckedAt) return false
-  const date = parseUtc(lastCheckedAt)
-  if (!date) return false
-  return now - date.getTime() > checkIntervalSeconds * 2000
-}
-
-/** Renders a check interval as a duration, or the disabled placeholder. */
-export function formatInterval(enabled: boolean, seconds: number): string {
-  if (!enabled) return '关闭'
-  if (seconds % 3600 === 0) return `${seconds / 3600} 小时`
-  if (seconds % 60 === 0) return `${seconds / 60} 分钟`
-  return `${seconds} 秒`
-}
-
-export function formatResponseMs(value?: number | null): string {
-  return value == null ? '—' : `${value}ms`
-}

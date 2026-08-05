@@ -9,11 +9,11 @@ export type ActionPhase = 'idle' | 'running' | 'queued'
 
 const TERMINAL_STATES = new Set<AgentCommandState>(['succeeded', 'failed', 'expired'])
 
-export function isTerminalState(state: AgentCommandState): boolean {
+function isTerminalState(state: AgentCommandState): boolean {
   return TERMINAL_STATES.has(state)
 }
 
-export const POLL_INTERVAL_MS = 1_500
+const POLL_INTERVAL_MS = 1_500
 
 /** Backend commands expire after 5 minutes; polling stops well before that. */
 const MAX_POLL_DURATION_MS = 5 * 60_000
@@ -50,7 +50,7 @@ function resultFromCommand(command: AgentCommandStatus): ProbeResult {
   }
 }
 
-export interface TrackActionCallbacks {
+interface TrackActionCallbacks {
   /** Fires once when the action turns out to be asynchronous. */
   onQueued?: () => void
   signal?: AbortSignal

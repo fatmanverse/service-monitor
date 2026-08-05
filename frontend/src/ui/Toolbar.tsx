@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { RefreshCw, Search } from 'lucide-react'
+import { RefreshCw } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Button } from './Button'
 import { formatRelativeTime } from '../lib/format'
@@ -14,29 +14,6 @@ export function ToolbarSpacer() {
 
 export function ToolbarCount({ children }: { children: ReactNode }) {
   return <span className="toolbar-count">{children}</span>
-}
-
-export function SearchInput({
-  value,
-  onChange,
-  placeholder = '搜索…',
-}: {
-  value: string
-  onChange: (value: string) => void
-  placeholder?: string
-}) {
-  return (
-    <div className="search-input">
-      <Search size={16} aria-hidden />
-      <input
-        type="search"
-        value={value}
-        placeholder={placeholder}
-        aria-label={placeholder}
-        onChange={(event) => onChange(event.target.value)}
-      />
-    </div>
-  )
 }
 
 /** Exclusive choice rendered as a compact segmented control. */

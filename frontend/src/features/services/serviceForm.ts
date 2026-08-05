@@ -32,7 +32,7 @@ export interface ServiceForm {
  */
 export type FormErrors = Record<string, string>
 
-export const PROBE_KEY_PATTERN = /^[a-zA-Z0-9_-]{1,64}$/
+const PROBE_KEY_PATTERN = /^[a-zA-Z0-9_-]{1,64}$/
 
 export function blankProbe(index: number): ProbeDraft {
   return {
@@ -218,7 +218,7 @@ interface ProbePayload {
   enabled: boolean
 }
 
-export interface ServicePayload {
+interface ServicePayload {
   host_id: number
   resource_group_id: number
   name: string

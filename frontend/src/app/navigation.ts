@@ -3,7 +3,7 @@ import type { LucideIcon } from 'lucide-react'
 
 export type SectionId = 'services' | 'hosts' | 'agents' | 'resources' | 'alerts' | 'users'
 
-export type NavigationGroup = '监控' | '配置'
+type NavigationGroup = '监控' | '配置'
 
 interface NavigationItem {
   id: SectionId
@@ -13,7 +13,7 @@ interface NavigationItem {
   group: NavigationGroup
 }
 
-export const NAVIGATION: NavigationItem[] = [
+const NAVIGATION: NavigationItem[] = [
   { id: 'services', label: '服务监测', icon: ShieldCheck, adminOnly: false, group: '监控' },
   { id: 'hosts', label: '主机管理', icon: Server, adminOnly: true, group: '监控' },
   { id: 'agents', label: 'Agent 接入', icon: Cpu, adminOnly: true, group: '监控' },
@@ -29,7 +29,7 @@ export function visibleNavigation(isAdmin: boolean) {
 }
 
 /** Both roles start on services: it is the only section a viewer can ever see. */
-export function defaultSection(): SectionId {
+function defaultSection(): SectionId {
   return 'services'
 }
 
