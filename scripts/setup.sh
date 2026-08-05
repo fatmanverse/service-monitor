@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+ROOT_DIR=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 
 if [ -z "${NODE_BIN:-}" ]; then
     if [ -n "${CONDA_PREFIX:-}" ] && [ -x "$CONDA_PREFIX/bin/node" ]; then

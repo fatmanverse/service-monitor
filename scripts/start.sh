@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+ROOT_DIR=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 if [ -z "${PYTHON_BIN:-}" ]; then
     if [ -x /opt/homebrew/bin/python3 ]; then
         PYTHON_BIN=/opt/homebrew/bin/python3
@@ -20,6 +20,7 @@ if [ -f "$ENV_FILE" ]; then
     OVERRIDE_APP_SECRET=${APP_SECRET:-}
     OVERRIDE_INITIAL_ADMIN_PASSWORD=${INITIAL_ADMIN_PASSWORD:-}
     set -a
+    # shellcheck disable=SC1090
     . "$ENV_FILE"
     set +a
     if [ -n "$OVERRIDE_APP_SECRET" ]; then

@@ -6,12 +6,14 @@
 
 - 主机管理：SSH 节点配置、手动探活、定时探活，可为节点多选飞书机器人并接收离线和恢复告警。
 - 服务监测：进程、systemd 服务、HTTP GET、HTTP POST 探活，支持请求头、JSON 请求体、Basic/Bearer 认证。
+- 服务详情：独立路由展示本次探活结果、各检查项状态和最近 30 天历史。
+- 监控生命周期：新服务默认停止定时探活，管理员显式启用/停止；手动探活离线后可确认拉起并复检。
 - 资源组：服务单资源组归属，用户按资源组授权可见范围。
 - 组合健康规则：一个服务可配置多个探活项，并使用任意嵌套 `AND` / `OR` 在线规则。
 - 故障恢复：服务掉线后通过 SSH 执行启动命令，并再次确认状态。
 - 告警管理：维护多个飞书机器人，一个服务可多选通知目标，离线与恢复时同时发送。
 - 节点故障静默：节点离线期间暂停其所有服务探活、自动拉起和服务告警，服务保留最后一次状态；节点恢复后自动继续。
-- 用户管理：管理员分配用户可见服务，非管理员只能读取获授权服务。
+- 用户管理：管理员分配用户可见服务，非管理员只能读取获授权服务，所有用户均可校验旧密码后自助改密。
 - 资源组授权：一个服务只属于一个资源组，用户可授权多个资源组。
 - 多探活在线规则：服务可配置多个进程/GET/POST 探活项，并通过任意嵌套 `AND` / `OR` 规则判断在线。
 - 数据一致性：删除主机时由数据库级联删除其服务、授权与探活记录。
@@ -93,7 +95,9 @@ python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 - `SCHEDULER_ENABLED`：默认 `true`
 - `MONITOR_WORKERS`：默认 `200`，限制并发 SSH/HTTP 探活数量；低配置机器可按资源下调
 - `AGENT_GRPC_BIND`：Agent gRPC TLS 服务监听地址，默认 `[::]:50051`
-- `AGENT_GRPC_CERT_FILE` / `AGENT_GRPC_KEY_FILE`：Agent gRPC 服务端证书与私钥；启动 gRPC 服务时必须同时设置
+- `AGENT_GRPC_CERT_DIR`：实例 CA 与 Server 证书目录，未显式配置证书时自动生成
+- `AGENT_GRPC_TLS_SERVER_NAME`：生成证书的固定 TLS 身份，默认 `service-monitor-server`
+- `AGENT_GRPC_CERT_FILE` / `AGENT_GRPC_KEY_FILE` / `AGENT_GRPC_CA_FILE`：可选的外部证书、私钥与公共 CA 路径
 
 Agent 注册、领取、心跳、配置同步和结果上报使用独立的 gRPC 服务，不经过 FastAPI。管理后台仍使用 FastAPI 提供管理员审批、撤销、密钥轮换和命令查询。启动 gRPC 服务：
 
@@ -104,7 +108,7 @@ python3 -m app.agent_grpc_server
 
 Agent 的无 Python 部署、PyInstaller 构建、四套 glibc 产物和 systemd 安装见 [docs/agent-install.md](docs/agent-install.md)。推送 `v*` tag 或手动运行 `Build Service Monitor Agent` workflow 会构建并发布 GitHub Release 资产。
 
-管理服务使用 `Build Service Monitor Server` workflow：先构建 React 静态资源，再将其嵌入后端 PyInstaller 二进制，发布 x86_64/ARM64 两套 glibc 2.28 服务端包。部署说明见 [docs/server-install.md](docs/server-install.md)。
+管理服务使用 `Build Service Monitor Server` workflow：先构建 React 静态资源，再将其嵌入后端 PyInstaller 二进制，发布 x86_64/ARM64 的 glibc 2.17/2.28 四套服务端包。每个包包含可在解压目录直接运行、自动生成随机密码的 `start.sh`，部署说明见 [docs/server-install.md](docs/server-install.md)。
 
 ## SSH 主机密钥
 

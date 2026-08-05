@@ -11,10 +11,10 @@ Agent 以 PyInstaller 单文件运行，不要求目标节点安装 Python。Git
 
 ## 安装
 
-解压目标节点对应的 tar 包并执行：
+先在管理端“Agent 接入”页下载当前 Server 的公共 CA，然后解压目标节点对应的 tar 包并执行：
 
 ```bash
-sudo ./install.sh
+sudo CA_FILE="$PWD/service-monitor-ca.crt" ./install.sh
 sudo editor /etc/service-monitor-agent/agent.toml
 sudo systemctl start service-monitor-agent
 sudo systemctl status service-monitor-agent
@@ -22,13 +22,17 @@ sudo systemctl status service-monitor-agent
 
 安装器根据 `uname -m` 和 `getconf GNU_LIBC_VERSION` 选择产物。glibc 低于 2.17、musl、未知 libc 和不支持的架构会明确失败。重复安装不会覆盖 `agent.toml` 或 `/var/lib/service-monitor-agent/agent.db`。
 
-配置至少需要监控中心的 TLS gRPC 地址：
+新安装会将 CA 复制到 `/etc/service-monitor-agent/ca.crt`，并写入固定的 Server TLS 身份。只需将 `center_url` 改为实际内网 IP 或域名：
 
 ```toml
 center_url = "grpcs://monitor.example:50051"
+ca_file = "/etc/service-monitor-agent/ca.crt"
+tls_server_name = "service-monitor-server"
 heartbeat_interval = 30
 state_path = "/var/lib/service-monitor-agent/agent.db"
 ```
+
+通过 IP 连接时，`tls_server_name` 仍验证 Server 证书的 SAN，不会关闭 TLS 校验。外部公共 CA 签发的证书可不传 `CA_FILE`，并按证书域名配置 `center_url`。
 
 首次运行会在状态库中生成 Agent 身份和 claim token。权限应保持为 root 可读，Agent 通过 gRPC 向中心申请审批；管理员批准后 Agent 自动领取独立密钥。
 

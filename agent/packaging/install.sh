@@ -12,6 +12,8 @@ BIN_PATH=/usr/local/bin/service-monitor-agent
 CONFIG_DIR=/etc/service-monitor-agent
 STATE_DIR=/var/lib/service-monitor-agent
 UNIT_PATH=/etc/systemd/system/service-monitor-agent.service
+CA_FILE=${CA_FILE:-}
+TLS_SERVER_NAME=${TLS_SERVER_NAME:-service-monitor-server}
 
 # shellcheck source=scripts/platform.sh
 . "$SCRIPT_DIR/platform.sh"
@@ -29,6 +31,10 @@ if [ ! -f "$checksum_file" ]; then
     printf '缺少 Agent SHA-256 校验文件: %s\n' "$checksum_file" >&2
     exit 1
 fi
+if [ -n "$CA_FILE" ] && [ ! -f "$CA_FILE" ]; then
+    printf 'Agent 公共 CA 文件不存在: %s\n' "$CA_FILE" >&2
+    exit 1
+fi
 if command -v sha256sum >/dev/null 2>&1; then
     (cd "$SOURCE_DIR" && sha256sum -c "$artifact.sha256")
 else
@@ -44,14 +50,21 @@ install -d -m 0755 /usr/local/bin "$CONFIG_DIR"
 install -d -m 0700 "$STATE_DIR"
 install -m 0755 "$binary" "$BIN_PATH"
 install -m 0644 "$SCRIPT_DIR/service-monitor-agent.service" "$UNIT_PATH"
+if [ -n "$CA_FILE" ]; then
+    install -m 0644 "$CA_FILE" "$CONFIG_DIR/ca.crt"
+fi
 if [ ! -f "$CONFIG_DIR/agent.toml" ]; then
     umask 077
-    cat > "$CONFIG_DIR/agent.toml" <<'EOF'
-# Set the monitoring center TLS gRPC endpoint before starting the service.
-center_url = "grpcs://monitor.example:50051"
-heartbeat_interval = 30
-state_path = "/var/lib/service-monitor-agent/agent.db"
-EOF
+    {
+        printf '# Set the monitoring center TLS gRPC endpoint before starting the service.\n'
+        printf 'center_url = "grpcs://monitor.example:50051"\n'
+        if [ -n "$CA_FILE" ]; then
+            printf 'ca_file = "%s/ca.crt"\n' "$CONFIG_DIR"
+            printf 'tls_server_name = "%s"\n' "$TLS_SERVER_NAME"
+        fi
+        printf 'heartbeat_interval = 30\n'
+        printf 'state_path = "%s/agent.db"\n' "$STATE_DIR"
+    } > "$CONFIG_DIR/agent.toml"
 fi
 
 if command -v systemctl >/dev/null 2>&1; then

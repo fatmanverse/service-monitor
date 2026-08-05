@@ -21,4 +21,11 @@
 - Task 6 frontend: `npm run typecheck --prefix frontend && npm run build --prefix frontend` -> passed twice; Vite built 1609 modules.
 - Task 6 style retirement scan: no gradient, backdrop-filter, color-mix, data-theme, useTheme or default-font remnants.
 - Task 6 diff hygiene -> exit 0.
-- Uncovered after Task 6: full regression, ADR/docs and final architecture review.
+- Backend full regression: `backend/.venv/bin/python -m pytest -q tests` -> 49 passed.
+- Agent full regression: `agent/.venv/bin/python -m pytest -q tests` -> 25 passed.
+- Frontend final static verification: `npm run typecheck --prefix frontend && npm run build --prefix frontend` -> passed; Vite built 1609 modules.
+- Shell validation: all scripts under `scripts`, `backend/packaging`, `agent/packaging` have no warning/error after equivalent syntax cleanup; dynamic source paths may emit info-only `SC1091` when checked individually.
+- Agent CA/package targeted rerun: 10 passed.
+- Backend and Agent compileall: exit 0.
+- Forbidden frontend style scan and `git diff --check`: no findings.
+- Manual browser verification: intentionally not run per user instruction.

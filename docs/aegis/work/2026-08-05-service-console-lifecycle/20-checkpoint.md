@@ -12,12 +12,12 @@
 
 ## TodoCheckpointDraft
 
-- Active: Task 7 - retirement, documentation, ADR and full verification.
-- Pending: Task 7.
-- Completed: Tasks 1-6, including account/CA UI and light operational console optimization.
-- Evidence refs: approved spec/plan commits `ff9a990`, `303d4b0`; Task 1 targeted test and compile evidence in `90-evidence.md`.
+- Active: completion candidate review.
+- Pending: none.
+- Completed: Tasks 1-7.
+- Evidence refs: approved spec/plan commits `11cad30`, `303d4b0`; Task 1 targeted test and compile evidence in `90-evidence.md`.
 - Blockers: none.
-- Next: commit Task 6, then run retirement scan, update ADR/docs and execute full verification.
+- Next: final diff/architecture review, commit Task 7 and produce verification receipt.
 
 ## Active Slice Card
 
@@ -83,6 +83,15 @@
 - Retirement: dark theme hook/toggle/token branch removed; no gradient/glass remnants.
 - Evidence: two fresh frontend typecheck/build runs, forbidden-style scan and diff check passed.
 - Decision: continue.
+
+## Task 7 Drift Check
+
+- Intent: all approved requirements remain covered.
+- Scope: Agent CA import, docs/ADR, retirement evidence and full validation only.
+- Compatibility: Agent config remains idempotent; CA import is opt-in for external-CA deployments.
+- Retirement: only statically proven dark-theme owner was deleted; no live component or API path removed.
+- Evidence: backend 49 tests, Agent 25 tests, frontend typecheck/build, ShellCheck, compileall and diff checks passed; targeted Agent packaging rerun passed 10 tests.
+- Decision: continue to completion review.
 
 ## ResumeStateHint
 

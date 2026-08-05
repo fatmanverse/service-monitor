@@ -5,6 +5,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PLATFORM = ROOT.parent / "scripts" / "platform.sh"
 PYINSTALLER_RUNTIME = ROOT.parent / "scripts" / "pyinstaller-runtime.sh"
+INSTALLER = ROOT / "packaging" / "install.sh"
 
 
 def select(product, architecture, libc):
@@ -114,3 +115,11 @@ def test_rejects_missing_pyinstaller_runtime_library(tmp_path):
     )
     assert result.returncode != 0
     assert "libcrypt.so.2" in result.stderr
+
+
+def test_agent_ca_is_validated_before_installed_files_are_replaced():
+    script = INSTALLER.read_text()
+
+    assert script.index('Agent 公共 CA 文件不存在') < script.index(
+        'install -m 0755 "$binary" "$BIN_PATH"'
+    )
