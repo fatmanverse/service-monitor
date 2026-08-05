@@ -3,6 +3,11 @@ import type { LucideIcon } from 'lucide-react'
 
 export type SectionId = 'services' | 'hosts' | 'agents' | 'resources' | 'alerts' | 'users'
 
+export interface AppRoute {
+  section: SectionId
+  serviceId?: number
+}
+
 type NavigationGroup = '监控' | '配置'
 
 interface NavigationItem {
@@ -42,8 +47,15 @@ export function sectionLabel(id: SectionId): string {
  * values and admin-only sections requested by a viewer fall back to the default
  * section rather than rendering a blank page.
  */
-export function resolveSection(hash: string, isAdmin: boolean): SectionId {
-  const match = NAVIGATION.find((item) => item.id === hash)
-  if (!match || (match.adminOnly && !isAdmin)) return defaultSection()
-  return match.id
+export function resolveRoute(hash: string, isAdmin: boolean): AppRoute {
+  const segments = hash.split('/').filter(Boolean)
+  const match = NAVIGATION.find((item) => item.id === segments[0])
+  if (!match || (match.adminOnly && !isAdmin)) return { section: defaultSection() }
+  if (match.id === 'services' && segments.length === 2) {
+    const serviceId = Number(segments[1])
+    if (Number.isInteger(serviceId) && serviceId > 0) {
+      return { section: 'services', serviceId }
+    }
+  }
+  return { section: match.id }
 }

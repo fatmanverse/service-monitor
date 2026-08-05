@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Activity, Pencil, Play, Plus, Radar, Trash2 } from 'lucide-react'
+import { ChevronRight, Pencil, Plus, Radar, Trash2 } from 'lucide-react'
 import { api, errorMessage } from '../api'
 import { AlertTargetPicker } from '../components/AlertTargetPicker'
 import { RuleEditor } from '../features/rules/RuleEditor'
@@ -15,7 +15,6 @@ import {
   type ProbeDraft,
   type ServiceForm,
 } from '../features/services/serviceForm'
-import { useEntityAction } from '../hooks/useEntityAction'
 import { formatDateTime } from '../lib/format'
 import type { AlertConfig, Host, Probe, ResourceGroup, Service } from '../types'
 import { StatusBadge, Tag } from '../ui/Badge'
@@ -27,7 +26,13 @@ import { Toolbar, ToolbarCount, ToolbarSpacer } from '../ui/Toolbar'
 
 const FORM_ID = 'service-form'
 
-export function ServicesPage({ isAdmin }: { isAdmin: boolean }) {
+export function ServicesPage({
+  isAdmin,
+  onSelectService,
+}: {
+  isAdmin: boolean
+  onSelectService: (serviceId: number) => void
+}) {
   const [services, setServices] = useState<Service[]>([])
   const [hosts, setHosts] = useState<Host[]>([])
   const [groups, setGroups] = useState<ResourceGroup[]>([])
@@ -38,7 +43,6 @@ export function ServicesPage({ isAdmin }: { isAdmin: boolean }) {
   const [form, setForm] = useState<ServiceForm>(blankServiceForm())
   const [errors, setErrors] = useState<FormErrors>({})
   const [message, setMessage] = useState('')
-  const { run: runAction, phaseOf } = useEntityAction()
 
   async function load() {
     setServices(await api.services())
@@ -120,21 +124,6 @@ export function ServicesPage({ isAdmin }: { isAdmin: boolean }) {
     }
   }
 
-  async function action(service: Service, type: 'probe' | 'restart') {
-    setMessage('')
-    try {
-      const result = await runAction(
-        service.id,
-        () => type === 'probe' ? api.probeService(service.id) : api.restartService(service.id),
-      )
-      if (!result) return
-      setMessage(`${service.name}：${result.message}`)
-      await load()
-    } catch (error) {
-      setMessage(errorMessage(error))
-    }
-  }
-
   async function remove(service: Service) {
     if (!confirm(`确认删除服务“${service.name}”？`)) return
     try {
@@ -192,10 +181,20 @@ export function ServicesPage({ isAdmin }: { isAdmin: boolean }) {
               description={isAdmin ? '请先创建资源组和主机，再配置服务。' : '管理员尚未向当前用户授权资源组。'}
             />
           </div>
-        ) : filtered.map((service) => {
-          const phase = phaseOf(service.id)
-          return (
-            <article className="service-card" key={service.id}>
+        ) : filtered.map((service) => (
+            <article
+              className="service-card"
+              key={service.id}
+              role="link"
+              tabIndex={0}
+              onClick={() => onSelectService(service.id)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault()
+                  onSelectService(service.id)
+                }
+              }}
+            >
               <header className="service-card-head">
                 <div className="service-card-icon"><Radar size={18} /></div>
                 <div className="service-card-title">
@@ -223,29 +222,12 @@ export function ServicesPage({ isAdmin }: { isAdmin: boolean }) {
               <p className="service-card-status" data-error={Boolean(service.last_error) || undefined}>
                 {service.last_error || (service.last_checked_at ? `最近检查 ${formatDateTime(service.last_checked_at)}` : '等待首次探活')}
               </p>
-              <footer className="service-card-footer">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  icon={<Activity size={15} />}
-                  loading={phase !== 'idle'}
-                  onClick={() => void action(service, 'probe')}
-                >
-                  {phase === 'queued' ? '排队中' : '探活'}
-                </Button>
+              <footer className="service-card-footer" onClick={(event) => event.stopPropagation()}>
+                <span className="service-card-link">查看详情 <ChevronRight size={15} /></span>
                 {isAdmin && (
                   <>
                     <Button size="sm" variant="ghost" icon={<Pencil size={15} />} onClick={() => openEdit(service)}>
                       编辑
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      icon={<Play size={15} />}
-                      disabled={phase !== 'idle' || !service.start_command}
-                      onClick={() => void action(service, 'restart')}
-                    >
-                      启动
                     </Button>
                     <Button
                       size="icon"
@@ -260,8 +242,7 @@ export function ServicesPage({ isAdmin }: { isAdmin: boolean }) {
                 )}
               </footer>
             </article>
-          )
-        })}
+        ))}
       </section>
 
       {modalOpen && (

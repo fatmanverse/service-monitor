@@ -12,12 +12,12 @@
 
 ## TodoCheckpointDraft
 
-- Active: Task 5 - frontend route, service detail and manual result flow.
-- Pending: Tasks 5-7.
-- Completed: Tasks 1-4, including release-root direct-run `start.sh`.
+- Active: Task 6 - account page, CA download and console visual optimization.
+- Pending: Tasks 6-7.
+- Completed: Tasks 1-5, including typed service detail route and history/result flow.
 - Evidence refs: approved spec/plan commits `ff9a990`, `303d4b0`; Task 1 targeted test and compile evidence in `90-evidence.md`.
 - Blockers: none.
-- Next: commit Task 4, then implement typed service detail route and UI data flow.
+- Next: commit Task 5, then implement account/CA navigation and global UI cleanup.
 
 ## Active Slice Card
 
@@ -63,6 +63,16 @@
 - Compatibility: `install.sh` and source `scripts/start.sh` retained unchanged.
 - Security: random secrets use `/dev/urandom`; env is `0600`; existing DB without env fails explicitly.
 - Evidence: 3 packaging tests, shellcheck and diff check passed.
+- Decision: continue.
+
+## Task 5 Drift Check
+
+- Intent: aligned with independent detail page and visible manual result requirements.
+- Scope: typed route, service detail, result normalization, list retirement and one backend lifecycle correction.
+- Compatibility: `#/services` remains list; `#/services/{id}` is additive; API URLs unchanged.
+- Repair: enabling a stopped service now makes it immediately due at the canonical service update owner.
+- Retirement: list-level probe/result and direct start actions removed.
+- Evidence: frontend typecheck/build, backend 3 lifecycle tests and diff check passed.
 - Decision: continue.
 
 ## ResumeStateHint

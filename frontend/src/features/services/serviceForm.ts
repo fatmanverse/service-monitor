@@ -48,7 +48,7 @@ export function blankProbe(index: number): ProbeDraft {
     auth_secret: '',
     expected_status: 200,
     timeout_seconds: 10,
-    enabled: true,
+    enabled: false,
   }
 }
 

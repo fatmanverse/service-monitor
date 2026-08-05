@@ -35,6 +35,7 @@ function resultFromCommand(command: AgentCommandStatus): ProbeResult {
       restarted: false,
       command_id: command.command_id,
       command_status: command.status,
+      probes: [],
     }
   }
 
@@ -47,6 +48,7 @@ function resultFromCommand(command: AgentCommandStatus): ProbeResult {
     restarted: report?.restarted ?? false,
     command_id: command.command_id,
     command_status: command.status,
+    probes: report?.probes ?? [],
   }
 }
 
@@ -107,6 +109,7 @@ export async function trackAction(
       mode: 'immediate',
       success: false,
       message: '服务端返回了排队状态但未提供命令编号，无法跟踪执行结果。',
+      probes: [],
     }
   }
 
@@ -124,6 +127,7 @@ export async function trackAction(
     mode: 'immediate',
     success: false,
     message: '命令仍在执行，界面已停止等待。稍后刷新可查看最新状态。',
+    probes: [],
     command_id: commandId,
   }
 }

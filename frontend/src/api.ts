@@ -6,6 +6,7 @@ import type {
   ApiErrorBody,
   Host,
   ProbeResult,
+  ProbeLogPage,
   ResourceGroup,
   Service,
   User,
@@ -124,6 +125,7 @@ export const api = {
     request<void>(`/resource-groups/${id}`, { method: 'DELETE' }),
 
   services: (options: ReadOptions = {}) => request<Service[]>('/services', options),
+  service: (id: number, options: ReadOptions = {}) => request<Service>(`/services/${id}`, options),
   createService: (payload: object) =>
     request<Service>('/services', { method: 'POST', body: JSON.stringify(payload) }),
   updateService: (id: number, payload: object) =>
@@ -132,6 +134,11 @@ export const api = {
   probeService: (id: number) => request<ProbeResult>(`/services/${id}/probe`, { method: 'POST' }),
   restartService: (id: number) =>
     request<ProbeResult>(`/services/${id}/restart`, { method: 'POST' }),
+  serviceLogs: (id: number, cursor?: string | null, options: ReadOptions = {}) => {
+    const query = new URLSearchParams({ limit: '50' })
+    if (cursor) query.set('cursor', cursor)
+    return request<ProbeLogPage>(`/services/${id}/logs?${query}`, options)
+  },
 
   agentCommand: (commandId: string, options: ReadOptions = {}) =>
     request<AgentCommandStatus>(`/agent-commands/${encodeURIComponent(commandId)}`, options),

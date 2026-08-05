@@ -2,19 +2,37 @@ import { useCallback, useEffect, useState } from 'react'
 import { api, clearToken, getToken, setUnauthorizedHandler } from './api'
 import { AppShell } from './app/AppShell'
 import { LoginPage } from './app/LoginPage'
-import { resolveSection, type SectionId } from './app/navigation'
+import { resolveRoute, type AppRoute } from './app/navigation'
 import { useHashRoute } from './hooks/useHashRoute'
 import { AgentsPage } from './pages/AgentsPage'
 import { AlertsPage } from './pages/AlertsPage'
 import { HostsPage } from './pages/HostsPage'
 import { ResourceGroupsPage } from './pages/ResourceGroupsPage'
 import { ServicesPage } from './pages/ServicesPage'
+import { ServiceDetailPage } from './pages/ServiceDetailPage'
 import { UsersPage } from './pages/UsersPage'
 import { ToastProvider } from './ui/Toast'
 import type { User } from './types'
 
-function SectionView({ section, user }: { section: SectionId; user: User }) {
-  switch (section) {
+function SectionView({
+  route,
+  user,
+  navigate,
+}: {
+  route: AppRoute
+  user: User
+  navigate: (next: string) => void
+}) {
+  if (route.section === 'services' && route.serviceId) {
+    return (
+      <ServiceDetailPage
+        serviceId={route.serviceId}
+        isAdmin={user.is_admin}
+        onBack={() => navigate('services')}
+      />
+    )
+  }
+  switch (route.section) {
     case 'hosts':
       return <HostsPage />
     case 'agents':
@@ -26,7 +44,12 @@ function SectionView({ section, user }: { section: SectionId; user: User }) {
     case 'users':
       return <UsersPage currentUserId={user.id} />
     case 'services':
-      return <ServicesPage isAdmin={user.is_admin} />
+      return (
+        <ServicesPage
+          isAdmin={user.is_admin}
+          onSelectService={(serviceId) => navigate(`services/${serviceId}`)}
+        />
+      )
   }
 }
 
@@ -66,13 +89,12 @@ export default function App() {
   if (restoring) return <div className="loading-screen">正在加载控制台…</div>
   if (!user) return <LoginPage onLogin={setUser} />
 
-  const section = resolveSection(hash, user.is_admin)
+  const route = resolveRoute(hash, user.is_admin)
 
   return (
     <ToastProvider>
-      <AppShell user={user} section={section} onNavigate={navigate} onLogout={logout}>
-        {/* Keying on the section discards stale page state and pollers on navigation. */}
-        <SectionView key={section} section={section} user={user} />
+      <AppShell user={user} section={route.section} onNavigate={navigate} onLogout={logout}>
+        <SectionView key={hash} route={route} user={user} navigate={navigate} />
       </AppShell>
     </ToastProvider>
   )

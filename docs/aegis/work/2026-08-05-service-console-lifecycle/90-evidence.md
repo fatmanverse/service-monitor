@@ -15,4 +15,7 @@
 - Task 4 packaging behavior: `backend/.venv/bin/python -m pytest -q tests/test_packaging_layout.py` -> 3 passed.
 - Task 4 shell validation: `shellcheck backend/packaging/start.sh backend/packaging/install.sh scripts/platform.sh` -> exit 0.
 - Task 4 diff hygiene -> exit 0.
-- Uncovered after Task 4: frontend and full regression.
+- Task 5 frontend: `npm run typecheck --prefix frontend && npm run build --prefix frontend` -> passed; Vite built 1609 modules.
+- Task 5 backend lifecycle repair: targeted `test_api.py` selection -> 3 passed.
+- Task 5 diff hygiene -> exit 0.
+- Uncovered after Task 5: account/CA UI, global visual cleanup and full regression.

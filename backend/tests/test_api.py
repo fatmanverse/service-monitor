@@ -100,6 +100,29 @@ def test_new_service_defaults_to_stopped_monitoring(client, admin_headers):
     assert response.json()["enabled"] is False
 
 
+def test_enabling_monitoring_makes_service_immediately_due(client, admin_headers):
+    from app.models import Service
+
+    host = create_host(client, admin_headers, name="enable-monitoring-host")
+    service = create_service(client, admin_headers, host["id"], name="enable-monitoring")
+    future = datetime.utcnow() + timedelta(days=1)
+    with client.app.state.database.session_factory() as db:
+        stored = db.get(Service, service["id"])
+        stored.enabled = False
+        stored.next_check_at = future
+        db.commit()
+
+    response = client.put(
+        f"/api/services/{service['id']}",
+        headers=admin_headers,
+        json={"enabled": True},
+    )
+
+    assert response.status_code == 200, response.text
+    assert response.json()["enabled"] is True
+    assert datetime.fromisoformat(response.json()["next_check_at"]) < future
+
+
 def test_manual_probe_never_auto_restarts_and_returns_probe_results(
     client, admin_headers, monkeypatch
 ):

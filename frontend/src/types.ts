@@ -100,6 +100,28 @@ export interface ProbeResult {
   restarted: boolean
   command_id?: string | null
   command_status?: string | null
+  probes: ProbeItemResult[]
+}
+
+export interface ProbeItemResult {
+  key: string
+  name?: string
+  success: boolean
+  message: string
+  response_ms?: number | null
+}
+
+export interface ProbeLog {
+  id: number
+  success: boolean
+  message: string
+  response_ms?: number | null
+  checked_at: string
+}
+
+export interface ProbeLogPage {
+  items: ProbeLog[]
+  next_cursor?: string | null
 }
 
 /** Lifecycle of a queued agent command, as written by the backend. */
@@ -111,6 +133,7 @@ interface AgentCommandReport {
   message: string
   response_ms?: number | null
   restarted?: boolean
+  probes?: ProbeItemResult[]
 }
 
 export interface AgentCommandStatus {

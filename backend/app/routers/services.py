@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
@@ -236,6 +237,7 @@ def update_service(
     if not service:
         raise HTTPException(status_code=404, detail="服务不存在")
     original_host_id = service.host_id
+    was_enabled = service.enabled
     values = payload.model_dump(exclude_unset=True, exclude={"probes", "health_rule", "alert_config_ids"})
     if "host_id" in values and not db.get(Host, values["host_id"]):
         raise HTTPException(status_code=404, detail="主机不存在")
@@ -276,6 +278,8 @@ def update_service(
     )
     for key, value in values.items():
         setattr(service, key, value)
+    if not was_enabled and values.get("enabled") is True:
+        service.next_check_at = datetime.utcnow()
     if payload.health_rule is not None:
         service.health_rule_json = json.dumps(payload.health_rule, ensure_ascii=False)
     if payload.probes is not None:
