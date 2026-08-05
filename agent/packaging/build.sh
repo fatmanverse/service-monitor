@@ -2,6 +2,9 @@
 set -eu
 
 ROOT_DIR=$(CDPATH='' cd -- "$(dirname -- "$0")/../.." && pwd)
+# shellcheck source=scripts/pyinstaller-runtime.sh
+. "$ROOT_DIR/scripts/pyinstaller-runtime.sh"
+
 OUTPUT_DIR=${OUTPUT_DIR:-"$ROOT_DIR/dist/agent"}
 ARTIFACT_NAME=${ARTIFACT_NAME:?ARTIFACT_NAME is required}
 if [ -z "${PYTHON_BIN:-}" ]; then
@@ -23,6 +26,12 @@ if [ -z "$PYTHON_LIB_DIR" ] || ! "$PYTHON_BIN" -c 'import sysconfig; raise Syste
 fi
 export LD_LIBRARY_PATH="$PYTHON_LIB_DIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
+set --
+if [ "$(uname -s)" = Linux ]; then
+    LIBCRYPT_PATH=$(find_runtime_library libcrypt.so.2)
+    set -- --add-binary "$LIBCRYPT_PATH:."
+fi
+
 cd "$ROOT_DIR"
 cd "$ROOT_DIR/agent"
 "$PYTHON_BIN" -m pip install --disable-pip-version-check --no-cache-dir -r requirements-build.txt >&2
@@ -39,6 +48,7 @@ mkdir -p "$OUTPUT_DIR/work" "$OUTPUT_DIR"
     --distpath "$OUTPUT_DIR/work/dist" \
     --workpath "$OUTPUT_DIR/work/build" \
     --specpath "$OUTPUT_DIR/work" \
+    "$@" \
     agent/packaging/entrypoint.py
 
 install -m 0755 "$OUTPUT_DIR/work/dist/service-monitor-agent" "$OUTPUT_DIR/$ARTIFACT_NAME"

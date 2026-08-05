@@ -4,6 +4,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PLATFORM = ROOT.parent / "scripts" / "platform.sh"
+PYINSTALLER_RUNTIME = ROOT.parent / "scripts" / "pyinstaller-runtime.sh"
 
 
 def select(product, architecture, libc):
@@ -73,3 +74,27 @@ def test_rejects_wrong_architecture_or_newer_glibc_baseline():
     newer_glibc = compatible("server", "service-monitor-server-linux-x86_64-glibc228", "x86_64", "2.17")
     assert newer_glibc.returncode != 0
     assert "glibc" in newer_glibc.stderr
+
+
+def test_finds_required_pyinstaller_runtime_library(tmp_path):
+    library = tmp_path / "libcrypt.so.2"
+    library.touch()
+    result = subprocess.run(
+        ["sh", "-c", f'. "{PYINSTALLER_RUNTIME}"; find_runtime_library libcrypt.so.2'],
+        check=True,
+        capture_output=True,
+        text=True,
+        env={"PATH": "/usr/bin:/bin", "RUNTIME_LIBRARY_DIRS": str(tmp_path)},
+    )
+    assert result.stdout.strip() == str(library)
+
+
+def test_rejects_missing_pyinstaller_runtime_library(tmp_path):
+    result = subprocess.run(
+        ["sh", "-c", f'. "{PYINSTALLER_RUNTIME}"; find_runtime_library libcrypt.so.2'],
+        capture_output=True,
+        text=True,
+        env={"PATH": "/usr/bin:/bin", "RUNTIME_LIBRARY_DIRS": str(tmp_path)},
+    )
+    assert result.returncode != 0
+    assert "libcrypt.so.2" in result.stderr
