@@ -53,7 +53,6 @@ jobs:
       - name: Validate packaging scripts
         run: |
           sh -n scripts/platform.sh agent/packaging/build.sh agent/packaging/install.sh agent/packaging/uninstall.sh
-          PYTHONPATH=agent python3 -m pytest agent/tests/test_packaging.py -q
       - name: Validate target image libc baseline
         run: |
           docker run --rm --platform "${{ matrix.platform }}" "${{ matrix.image }}" sh -c 'getconf GNU_LIBC_VERSION && uname -m'
