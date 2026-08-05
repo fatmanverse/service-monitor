@@ -10,3 +10,4 @@
 - [主动注册 Agent 实施计划](plans/2026-08-04-agent.md)
 - [主动注册 Agent 工作记录](work/2026-08-04-agent/10-intent.md)
 - [服务详情、监控生命周期与直接启动设计规格](specs/2026-08-05-service-console-lifecycle-design.md)
+- [服务详情、监控生命周期与直接启动实施计划](plans/2026-08-05-service-console-lifecycle.md)
