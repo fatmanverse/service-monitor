@@ -6,6 +6,7 @@ import subprocess
 
 
 ROOT = Path(__file__).resolve().parents[1]
+SERVER_WORKFLOW = ROOT.parent / ".github" / "workflows" / "server-build.yml"
 
 
 def test_backend_packaging_files_exist():
@@ -20,6 +21,13 @@ def test_frontend_bundle_is_resolved_from_pyinstaller_runtime(monkeypatch):
 
     monkeypatch.setattr(main.sys, "_MEIPASS", "/tmp/pyinstaller", raising=False)
     assert str(main.frontend_dist_path()).startswith("/tmp/pyinstaller")
+
+
+def test_server_workflow_smokes_glibc228_on_rocky_linux_9():
+    workflow = SERVER_WORKFLOW.read_text()
+
+    assert "service-monitor-server-linux-x86_64-glibc228" in workflow
+    assert "rockylinux:9" in workflow
 
 
 def test_release_start_script_initializes_once_and_reuses_credentials(tmp_path):

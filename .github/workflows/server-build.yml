@@ -88,24 +88,32 @@ jobs:
           if-no-files-found: error
 
   smoke:
-    name: Server glibc 2.17 smoke test
+    name: ${{ matrix.image }} server smoke test
     needs: backend
     runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - artifact: service-monitor-server-linux-x86_64-glibc217
+            image: centos:7
+          - artifact: service-monitor-server-linux-x86_64-glibc228
+            image: rockylinux:9
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: service-monitor-server-linux-x86_64-glibc217
+          name: ${{ matrix.artifact }}
           path: smoke
       - name: Extract server bundle
         run: |
           mkdir -p smoke/server
-          tar -xzf smoke/service-monitor-server-linux-x86_64-glibc217.tar.gz -C smoke/server
-      - name: Run on CentOS 7
+          tar -xzf "smoke/${{ matrix.artifact }}.tar.gz" -C smoke/server
+      - name: Run target image self-test
         run: |
           docker run --rm \
             -v "$GITHUB_WORKSPACE/smoke/server:/server:ro" \
-            centos:7 \
-            /server/service-monitor-server-linux-x86_64-glibc217 --self-test
+            "${{ matrix.image }}" \
+            "/server/${{ matrix.artifact }}" --self-test
 
   release:
     if: startsWith(github.ref, 'refs/tags/')
