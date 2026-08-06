@@ -7,11 +7,12 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload, selectinload
 
+from ..authorization import service_visibility_filter
 from ..dependencies import get_cipher, get_current_user, get_db, get_monitor, require_admin
 from ..alert_targets import resolve_alert_configs
 from ..agent_protocol import bump_agent_config_revision, queue_agent_command
 from ..health_rules import HealthRuleError, validate_rule
-from ..models import Host, ResourceGroup, Service, ServiceProbe, User, UserResourceGroup
+from ..models import Host, ResourceGroup, Service, ServiceProbe, User
 from ..monitoring import MonitoringService
 from ..probe_log_retention import list_probe_logs
 from ..schemas import (
@@ -66,13 +67,26 @@ def service_load_options():
     )
 
 
+def reload_service(db: Session, service_id: int) -> Service:
+    """Re-reads a service after a write so the response reflects stored state.
+
+    `populate_existing` is required because the session is created with
+    `expire_on_commit=False`: without it the identity map keeps the relationship
+    loaded before the write, and a re-pointed `host_id` or `resource_group_id`
+    would serialize the previous host or group name.
+    """
+    return db.scalar(
+        select(Service)
+        .options(*service_load_options())
+        .execution_options(populate_existing=True)
+        .where(Service.id == service_id)
+    )
+
+
 def visible_service_query(user: User):
     query = select(Service).options(*service_load_options()).order_by(Service.name)
     if not user.is_admin:
-        query = query.join(
-            UserResourceGroup,
-            UserResourceGroup.resource_group_id == Service.resource_group_id,
-        ).where(UserResourceGroup.user_id == user.id)
+        query = query.where(service_visibility_filter(user))
     return query
 
 
@@ -189,7 +203,7 @@ def create_service(
     host = db.get(Host, payload.host_id)
     if not host:
         raise HTTPException(status_code=404, detail="主机不存在")
-    if not db.get(ResourceGroup, payload.resource_group_id):
+    if payload.resource_group_id is not None and not db.get(ResourceGroup, payload.resource_group_id):
         raise HTTPException(status_code=404, detail="资源组不存在")
     validate_configuration(
         payload.probes,
@@ -221,8 +235,7 @@ def create_service(
     except IntegrityError:
         db.rollback()
         raise HTTPException(status_code=409, detail="服务名称或探活项标识已存在")
-    service = db.scalar(select(Service).options(*service_load_options()).where(Service.id == service.id))
-    return service_output(service)
+    return service_output(reload_service(db, service.id))
 
 
 @router.put("/{service_id}", response_model=ServiceOutput)
@@ -241,7 +254,10 @@ def update_service(
     values = payload.model_dump(exclude_unset=True, exclude={"probes", "health_rule", "alert_config_ids"})
     if "host_id" in values and not db.get(Host, values["host_id"]):
         raise HTTPException(status_code=404, detail="主机不存在")
-    if "resource_group_id" in values and not db.get(ResourceGroup, values["resource_group_id"]):
+    # An explicit null unbinds the service; an absent key leaves the binding alone.
+    if values.get("resource_group_id") is not None and not db.get(
+        ResourceGroup, values["resource_group_id"]
+    ):
         raise HTTPException(status_code=404, detail="资源组不存在")
     effective_probes = payload.probes or [
         ServiceProbeInput(
@@ -300,8 +316,7 @@ def update_service(
     except IntegrityError:
         db.rollback()
         raise HTTPException(status_code=409, detail="服务名称或探活项标识已存在")
-    service = db.scalar(select(Service).options(*service_load_options()).where(Service.id == service_id))
-    return service_output(service)
+    return service_output(reload_service(db, service_id))
 
 
 @router.delete("/{service_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { KeyRound, Plus, Trash2, Users } from 'lucide-react'
 import { api, errorMessage } from '../api'
 import { formatDateTime } from '../lib/format'
-import type { ResourceGroup, User } from '../types'
+import type { ResourceGroup, Service, User } from '../types'
 import { Tag } from '../ui/Badge'
 import { Button } from '../ui/Button'
 import { Card, EmptyState, Notice, PageHeader } from '../ui/Display'
@@ -15,16 +15,23 @@ const GRANT_FORM_ID = 'grant-user-form'
 export function UsersPage({ currentUserId }: { currentUserId: number }) {
   const [users, setUsers] = useState<User[]>([])
   const [groups, setGroups] = useState<ResourceGroup[]>([])
+  const [ungroupedServices, setUngroupedServices] = useState<Service[]>([])
   const [createOpen, setCreateOpen] = useState(false)
   const [grantUser, setGrantUser] = useState<User | null>(null)
   const [selected, setSelected] = useState<number[]>([])
+  const [selectedServices, setSelectedServices] = useState<number[]>([])
   const [form, setForm] = useState({ username: '', password: '', is_admin: false })
   const [message, setMessage] = useState('')
 
   async function load() {
-    const [userItems, groupItems] = await Promise.all([api.users(), api.resourceGroups()])
+    const [userItems, groupItems, serviceItems] = await Promise.all([
+      api.users(),
+      api.resourceGroups(),
+      api.services(),
+    ])
     setUsers(userItems)
     setGroups(groupItems)
+    setUngroupedServices(serviceItems.filter((service) => service.resource_group_id == null))
   }
 
   useEffect(() => {
@@ -45,8 +52,12 @@ export function UsersPage({ currentUserId }: { currentUserId: number }) {
 
   async function openGrants(user: User) {
     try {
-      const grants = await api.userResourceGroups(user.id)
-      setSelected(grants.map((group) => group.id))
+      const [groupGrants, serviceGrants] = await Promise.all([
+        api.userResourceGroups(user.id),
+        api.userServices(user.id),
+      ])
+      setSelected(groupGrants.map((group) => group.id))
+      setSelectedServices(serviceGrants.map((service) => service.id))
       setGrantUser(user)
     } catch (error) {
       setMessage(errorMessage(error))
@@ -58,8 +69,9 @@ export function UsersPage({ currentUserId }: { currentUserId: number }) {
     if (!grantUser) return
     try {
       await api.setUserResourceGroups(grantUser.id, selected)
+      await api.setUserServices(grantUser.id, selectedServices)
       setGrantUser(null)
-      setMessage('资源组可见范围已更新')
+      setMessage('可见范围已更新')
       await load()
     } catch (error) {
       setMessage(errorMessage(error))
@@ -80,7 +92,7 @@ export function UsersPage({ currentUserId }: { currentUserId: number }) {
     <>
       <PageHeader
         title="用户管理"
-        description="管理员创建账号，并按资源组分配服务可见范围。"
+        description="管理员创建账号，按资源组或单个服务分配可见范围。"
         actions={(
           <Button variant="primary" icon={<Plus size={16} />} onClick={() => setCreateOpen(true)}>
             新增用户
@@ -128,7 +140,7 @@ export function UsersPage({ currentUserId }: { currentUserId: number }) {
                             icon={<KeyRound size={15} />}
                             onClick={() => void openGrants(user)}
                           >
-                            分配资源组
+                            分配可见范围
                           </Button>
                         )}
                         <Button
@@ -191,7 +203,7 @@ export function UsersPage({ currentUserId }: { currentUserId: number }) {
 
       {grantUser && (
         <Modal
-          title={`分配资源组 · ${grantUser.username}`}
+          title={`分配可见范围 · ${grantUser.username}`}
           onClose={() => setGrantUser(null)}
           footer={(
             <>
@@ -201,27 +213,65 @@ export function UsersPage({ currentUserId }: { currentUserId: number }) {
           )}
         >
           <form id={GRANT_FORM_ID} onSubmit={saveGrants}>
-            <div className="option-list">
-              {groups.length === 0 ? (
-                <span className="option-empty">暂无可分配的资源组。</span>
-              ) : groups.map((group) => (
-                <label className="option-item" key={group.id}>
-                  <input
-                    type="checkbox"
-                    checked={selected.includes(group.id)}
-                    onChange={(event) => setSelected(
-                      event.target.checked
-                        ? [...selected, group.id]
-                        : selected.filter((id) => id !== group.id),
-                    )}
-                  />
-                  <span className="option-item-text">
-                    <strong>{group.name}</strong>
-                    <small>{group.service_count} 个服务 · {group.description || '无说明'}</small>
-                  </span>
-                </label>
-              ))}
-            </div>
+            <section className="form-section">
+              <header className="form-section-head">
+                <div>
+                  <h3>资源组</h3>
+                  <p>授予资源组后，该组内的所有服务都可见。</p>
+                </div>
+              </header>
+              <div className="option-list">
+                {groups.length === 0 ? (
+                  <span className="option-empty">暂无可分配的资源组。</span>
+                ) : groups.map((group) => (
+                  <label className="option-item" key={group.id}>
+                    <input
+                      type="checkbox"
+                      checked={selected.includes(group.id)}
+                      onChange={(event) => setSelected(
+                        event.target.checked
+                          ? [...selected, group.id]
+                          : selected.filter((id) => id !== group.id),
+                      )}
+                    />
+                    <span className="option-item-text">
+                      <strong>{group.name}</strong>
+                      <small>{group.service_count} 个服务 · {group.description || '无说明'}</small>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </section>
+
+            <section className="form-section">
+              <header className="form-section-head">
+                <div>
+                  <h3>未绑定资源组的服务</h3>
+                  <p>这类服务没有所属资源组，只能在此逐个授权。</p>
+                </div>
+              </header>
+              <div className="option-list">
+                {ungroupedServices.length === 0 ? (
+                  <span className="option-empty">暂无未绑定资源组的服务。</span>
+                ) : ungroupedServices.map((service) => (
+                  <label className="option-item" key={service.id}>
+                    <input
+                      type="checkbox"
+                      checked={selectedServices.includes(service.id)}
+                      onChange={(event) => setSelectedServices(
+                        event.target.checked
+                          ? [...selectedServices, service.id]
+                          : selectedServices.filter((id) => id !== service.id),
+                      )}
+                    />
+                    <span className="option-item-text">
+                      <strong>{service.name}</strong>
+                      <small>{service.host_name} · {service.probes.length} 个探活项</small>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </section>
           </form>
         </Modal>
       )}

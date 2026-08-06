@@ -26,6 +26,9 @@ import { Toolbar, ToolbarCount, ToolbarSpacer } from '../ui/Toolbar'
 
 const FORM_ID = 'service-form'
 
+/** Sentinel filter value: services deliberately left without a resource group. */
+const UNGROUPED_FILTER = 'ungrouped'
+
 export function ServicesPage({
   isAdmin,
   onSelectService,
@@ -65,10 +68,17 @@ export function ServicesPage({
 
   const filtered = groupFilter === 'all'
     ? services
-    : services.filter((service) => service.resource_group_id === Number(groupFilter))
+    : groupFilter === UNGROUPED_FILTER
+      ? services.filter((service) => service.resource_group_id == null)
+      : services.filter((service) => service.resource_group_id === Number(groupFilter))
   const filterGroups = [...new Map(
-    services.map((service) => [service.resource_group_id, service.resource_group_name]),
+    services.flatMap((service) => (
+      service.resource_group_id == null
+        ? []
+        : [[service.resource_group_id, service.resource_group_name] as const]
+    )),
   ).entries()]
+  const ungroupedCount = services.filter((service) => service.resource_group_id == null).length
 
   function openCreate() {
     setEditing(null)
@@ -144,20 +154,15 @@ export function ServicesPage({
             variant="primary"
             icon={<Plus size={16} />}
             onClick={openCreate}
-            disabled={!hosts.length || !groups.length}
-            title={!hosts.length ? '请先新增主机节点' : !groups.length ? '请先新增资源组' : undefined}
+            disabled={!hosts.length}
+            title={!hosts.length ? '请先新增主机节点' : undefined}
           >
             新增服务
           </Button>
         ) : undefined}
       />
       {message && <Notice>{message}</Notice>}
-      {isAdmin && (!hosts.length || !groups.length) && (
-        <Notice>
-          新增服务前必须同时存在主机节点和资源组。当前缺少：
-          {[!hosts.length && '主机节点', !groups.length && '资源组'].filter(Boolean).join('、')}。
-        </Notice>
-      )}
+      {isAdmin && !hosts.length && <Notice>新增服务前必须先创建主机节点。</Notice>}
       <StatGrid>
         <StatCard label="服务总数" value={services.length} icon={<Radar size={16} />} />
         <StatCard
@@ -188,6 +193,7 @@ export function ServicesPage({
           >
             <option value="all">全部资源组</option>
             {filterGroups.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+            {ungroupedCount > 0 && <option value={UNGROUPED_FILTER}>未绑定资源组</option>}
           </SelectField>
         </div>
         <ToolbarSpacer />
@@ -219,7 +225,7 @@ export function ServicesPage({
               <header className="service-card-head">
                 <div className="service-card-icon"><Radar size={18} /></div>
                 <div className="service-card-title">
-                  <span>{service.resource_group_name} · {service.host_name}</span>
+                  <span>{service.resource_group_name ?? '未绑定资源组'} · {service.host_name}</span>
                   <h2>{service.name}</h2>
                 </div>
                 <StatusBadge status={service.status} />
@@ -297,10 +303,10 @@ export function ServicesPage({
                 label="资源组"
                 value={form.resource_group_id}
                 error={errors.resource_group_id}
+                hint="不绑定资源组的服务仅管理员可见，需在用户管理中单独授权。"
                 onChange={(event) => setForm({ ...form, resource_group_id: event.target.value })}
-                required
               >
-                <option value="">请选择</option>
+                <option value="">不绑定资源组</option>
                 {groups.map((group) => <option value={group.id} key={group.id}>{group.name}</option>)}
               </SelectField>
               <TextField

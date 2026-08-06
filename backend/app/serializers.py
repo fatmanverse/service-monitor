@@ -32,7 +32,7 @@ def service_output(service: Service) -> ServiceOutput:
         host_id=service.host_id,
         host_name=service.host.name,
         resource_group_id=service.resource_group_id,
-        resource_group_name=service.resource_group.name,
+        resource_group_name=service.resource_group.name if service.resource_group else None,
         name=service.name,
         probes=[probe_output(probe) for probe in service.probes],
         health_rule=json.loads(service.health_rule_json),

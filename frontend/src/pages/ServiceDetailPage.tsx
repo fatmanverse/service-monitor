@@ -171,7 +171,7 @@ export function ServiceDetailPage({
           <ArrowLeft size={18} />
         </Button>
         <div className="detail-heading-copy">
-          <span>{service.resource_group_name} / {service.host_name}</span>
+          <span>{service.resource_group_name ?? '未绑定资源组'} / {service.host_name}</span>
           <div><h1>{service.name}</h1><StatusBadge status={service.status} /></div>
         </div>
         <div className="detail-actions">

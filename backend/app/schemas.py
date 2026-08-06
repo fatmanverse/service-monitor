@@ -59,6 +59,10 @@ class ResourceGroupGrantInput(BaseModel):
     resource_group_ids: List[int]
 
 
+class ServiceGrantInput(BaseModel):
+    service_ids: List[int]
+
+
 class ResourceGroupCreate(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     description: Optional[str] = Field(default=None, max_length=500)
@@ -191,7 +195,9 @@ class ServiceProbeOutput(BaseModel):
 
 class ServiceBase(BaseModel):
     host_id: int
-    resource_group_id: int
+    # Optional: an unbound service is visible to admins and to users holding a
+    # direct grant in `user_services`.
+    resource_group_id: Optional[int] = None
     name: str = Field(min_length=1, max_length=100)
     probes: List[ServiceProbeInput] = Field(min_length=1, max_length=50)
     health_rule: dict
@@ -236,8 +242,8 @@ class ServiceOutput(BaseModel):
     id: int
     host_id: int
     host_name: str
-    resource_group_id: int
-    resource_group_name: str
+    resource_group_id: Optional[int]
+    resource_group_name: Optional[str]
     name: str
     probes: List[ServiceProbeOutput]
     health_rule: dict

@@ -6,10 +6,20 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..dependencies import get_db, require_admin
-from ..models import ResourceGroup, User, UserResourceGroup
-from ..schemas import ResourceGroupGrantInput, ResourceGroupOutput, UserCreate, UserSummary, UserUpdate
+from ..models import ResourceGroup, Service, User, UserResourceGroup, UserService
+from ..schemas import (
+    ResourceGroupGrantInput,
+    ResourceGroupOutput,
+    ServiceGrantInput,
+    ServiceOutput,
+    UserCreate,
+    UserSummary,
+    UserUpdate,
+)
 from ..security import hash_password
+from ..serializers import service_output
 from .resource_groups import group_output
+from .services import service_load_options
 
 
 router = APIRouter(prefix="/users", tags=["用户"])
@@ -91,3 +101,46 @@ def set_user_groups(
     db.add_all([UserResourceGroup(user_id=user_id, resource_group_id=group_id) for group_id in group_ids])
     db.commit()
     return [group_output(db, group) for group in sorted(groups, key=lambda item: item.name)]
+
+
+def granted_services(db: Session, user_id: int) -> List[ServiceOutput]:
+    services = db.scalars(
+        select(Service)
+        .options(*service_load_options())
+        .join(UserService, UserService.service_id == Service.id)
+        .where(UserService.user_id == user_id)
+        .order_by(Service.name)
+    ).unique().all()
+    return [service_output(service) for service in services]
+
+
+@router.get("/{user_id}/services", response_model=List[ServiceOutput])
+def get_user_services(user_id: int, db: Session = Depends(get_db), _admin: User = Depends(require_admin)):
+    if not db.get(User, user_id):
+        raise HTTPException(status_code=404, detail="用户不存在")
+    return granted_services(db, user_id)
+
+
+@router.put("/{user_id}/services", response_model=List[ServiceOutput])
+def set_user_services(
+    user_id: int,
+    payload: ServiceGrantInput,
+    db: Session = Depends(get_db),
+    _admin: User = Depends(require_admin),
+):
+    """Replaces the user's per-service grants.
+
+    These grants are additive to any resource-group grant, so a service stays
+    visible through its group even when it is not listed here.
+    """
+    if not db.get(User, user_id):
+        raise HTTPException(status_code=404, detail="用户不存在")
+    service_ids = sorted(set(payload.service_ids))
+    if service_ids:
+        found = db.scalars(select(Service.id).where(Service.id.in_(service_ids))).all()
+        if len(found) != len(service_ids):
+            raise HTTPException(status_code=400, detail="包含不存在的服务")
+    db.execute(delete(UserService).where(UserService.user_id == user_id))
+    db.add_all([UserService(user_id=user_id, service_id=service_id) for service_id in service_ids])
+    db.commit()
+    return granted_services(db, user_id)

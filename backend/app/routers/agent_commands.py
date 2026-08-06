@@ -5,8 +5,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..agent_schemas import AgentCommandStatusOutput
+from ..authorization import service_visibility_filter
 from ..dependencies import get_current_user, get_db
-from ..models import AgentCommand, Service, User, UserResourceGroup
+from ..models import AgentCommand, Service, User
 
 
 router = APIRouter(prefix="/agent-commands", tags=["Agent 命令"])
@@ -23,14 +24,9 @@ def get_command(
         raise HTTPException(status_code=404, detail="Agent 命令不存在")
     if not current_user.is_admin:
         visible = db.scalar(
-            select(Service.id)
-            .join(
-                UserResourceGroup,
-                UserResourceGroup.resource_group_id == Service.resource_group_id,
-            )
-            .where(
+            select(Service.id).where(
                 Service.id == command.service_id,
-                UserResourceGroup.user_id == current_user.id,
+                service_visibility_filter(current_user),
             )
         )
         if not visible:

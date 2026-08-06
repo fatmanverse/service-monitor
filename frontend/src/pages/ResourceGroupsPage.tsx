@@ -184,7 +184,7 @@ export function ResourceGroupsPage() {
                   />
                   <span className="option-item-text">
                     <strong>{service.name}</strong>
-                    <small>{service.resource_group_name} · {service.host_name}</small>
+                    <small>{service.resource_group_name ?? '未绑定资源组'} · {service.host_name}</small>
                   </span>
                 </label>
               ))}

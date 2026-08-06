@@ -195,4 +195,11 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify({ resource_group_ids: groupIds }),
     }),
+  userServices: (id: number, options: ReadOptions = {}) =>
+    request<Service[]>(`/users/${id}/services`, options),
+  setUserServices: (id: number, serviceIds: number[]) =>
+    request<Service[]>(`/users/${id}/services`, {
+      method: 'PUT',
+      body: JSON.stringify({ service_ids: serviceIds }),
+    }),
 }

@@ -13,6 +13,7 @@ export type ProbeDraft = Omit<Probe, 'headers' | 'body'> & {
 
 export interface ServiceForm {
   host_id: string
+  /** Empty means the service is intentionally not bound to a resource group. */
   resource_group_id: string
   name: string
   probes: ProbeDraft[]
@@ -73,7 +74,7 @@ export function blankServiceForm(): ServiceForm {
 export function serviceToForm(service: Service): ServiceForm {
   return {
     host_id: String(service.host_id),
-    resource_group_id: String(service.resource_group_id),
+    resource_group_id: service.resource_group_id == null ? '' : String(service.resource_group_id),
     name: service.name,
     probes: service.probes.map((probe) => ({
       ...probe,
@@ -129,7 +130,6 @@ export function validateServiceForm(form: ServiceForm): FormErrors {
   const errors: FormErrors = {}
 
   if (!form.host_id) errors.host_id = '请选择所属节点。'
-  if (!form.resource_group_id) errors.resource_group_id = '请选择资源组。'
   if (!form.name.trim()) errors.name = '请输入服务名称。'
 
   const interval = Number(form.check_interval)
@@ -220,7 +220,7 @@ interface ProbePayload {
 
 interface ServicePayload {
   host_id: number
-  resource_group_id: number
+  resource_group_id: number | null
   name: string
   probes: ProbePayload[]
   health_rule: HealthRule
@@ -242,7 +242,9 @@ interface ServicePayload {
 export function buildServicePayload(form: ServiceForm): ServicePayload {
   return {
     host_id: Number(form.host_id),
-    resource_group_id: Number(form.resource_group_id),
+    // An explicit null unbinds the service; the backend keeps the binding only
+    // when the key is absent, so it must always be sent.
+    resource_group_id: form.resource_group_id ? Number(form.resource_group_id) : null,
     name: form.name.trim(),
     probes: form.probes.map((probe) => {
       const isHttp = probe.probe_type !== 'process'

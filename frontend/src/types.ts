@@ -67,8 +67,8 @@ export interface Service {
   id: number
   host_id: number
   host_name: string
-  resource_group_id: number
-  resource_group_name: string
+  resource_group_id: number | null
+  resource_group_name: string | null
   name: string
   probes: Probe[]
   health_rule: HealthRule

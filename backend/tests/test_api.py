@@ -792,3 +792,227 @@ def test_admin_cannot_remove_own_admin_role(client, admin_headers):
     )
 
     assert response.status_code == 400
+
+
+def create_ungrouped_service(client, headers, host_id, name="ungrouped-service"):
+    response = client.post(
+        "/api/services",
+        headers=headers,
+        json={
+            "host_id": host_id,
+            "name": name,
+            "probes": [
+                {
+                    "key": "http-main",
+                    "name": "主地址",
+                    "probe_type": "get",
+                    "url": "http://127.0.0.1:9999/health",
+                }
+            ],
+            "health_rule": {"probe": "http-main"},
+        },
+    )
+    assert response.status_code == 201, response.text
+    return response.json()
+
+
+def create_viewer(client, admin_headers, username="viewer"):
+    response = client.post(
+        "/api/users",
+        headers=admin_headers,
+        json={"username": username, "password": "viewer-pass", "is_admin": False},
+    )
+    assert response.status_code == 201, response.text
+    login = client.post(
+        "/api/auth/login",
+        json={"username": username, "password": "viewer-pass"},
+    )
+    assert login.status_code == 200, login.text
+    return response.json(), {"Authorization": f"Bearer {login.json()['access_token']}"}
+
+
+def test_service_can_be_created_without_a_resource_group(client, admin_headers):
+    host = create_host(client, admin_headers, name="ungrouped-host")
+
+    service = create_ungrouped_service(client, admin_headers, host["id"])
+
+    assert service["resource_group_id"] is None
+    assert service["resource_group_name"] is None
+    listed = client.get("/api/services", headers=admin_headers)
+    assert listed.status_code == 200
+    assert [item["resource_group_id"] for item in listed.json()] == [None]
+
+
+def test_service_rejects_unknown_resource_group_on_create(client, admin_headers):
+    host = create_host(client, admin_headers, name="unknown-group-host")
+
+    response = client.post(
+        "/api/services",
+        headers=admin_headers,
+        json={
+            "host_id": host["id"],
+            "resource_group_id": 9999,
+            "name": "unknown-group-service",
+            "probes": [
+                {
+                    "key": "http-main",
+                    "name": "主地址",
+                    "probe_type": "get",
+                    "url": "http://127.0.0.1:9999/health",
+                }
+            ],
+            "health_rule": {"probe": "http-main"},
+        },
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "资源组不存在"
+
+
+def test_service_resource_group_can_be_unbound_and_rebound(client, admin_headers):
+    host = create_host(client, admin_headers, name="rebind-host")
+    service = create_service(client, admin_headers, host["id"], name="rebind")
+    original_group_id = service["resource_group_id"]
+
+    unbound = client.put(
+        f"/api/services/{service['id']}",
+        headers=admin_headers,
+        json={"resource_group_id": None},
+    )
+    assert unbound.status_code == 200, unbound.text
+    assert unbound.json()["resource_group_id"] is None
+    assert unbound.json()["resource_group_name"] is None
+
+    # An absent key must leave the binding untouched rather than clearing it.
+    renamed = client.put(
+        f"/api/services/{service['id']}",
+        headers=admin_headers,
+        json={"name": "rebind-renamed"},
+    )
+    assert renamed.status_code == 200, renamed.text
+    assert renamed.json()["resource_group_id"] is None
+
+    rebound = client.put(
+        f"/api/services/{service['id']}",
+        headers=admin_headers,
+        json={"resource_group_id": original_group_id},
+    )
+    assert rebound.status_code == 200, rebound.text
+    assert rebound.json()["resource_group_id"] == original_group_id
+
+
+def test_moving_service_returns_the_new_host_name(client, admin_headers):
+    source = create_host(client, admin_headers, name="move-source")
+    target = create_host(client, admin_headers, name="move-target")
+    service = create_service(client, admin_headers, source["id"], name="move")
+
+    moved = client.put(
+        f"/api/services/{service['id']}",
+        headers=admin_headers,
+        json={"host_id": target["id"]},
+    )
+
+    assert moved.status_code == 200, moved.text
+    assert moved.json()["host_id"] == target["id"]
+    assert moved.json()["host_name"] == "move-target"
+
+
+def test_ungrouped_service_is_hidden_until_granted_directly(client, admin_headers):
+    host = create_host(client, admin_headers, name="direct-grant-host")
+    ungrouped = create_ungrouped_service(client, admin_headers, host["id"], name="ungrouped")
+    grouped = create_service(client, admin_headers, host["id"], name="grouped")
+    user, viewer_headers = create_viewer(client, admin_headers)
+
+    hidden = client.get("/api/services", headers=viewer_headers)
+    assert hidden.status_code == 200
+    assert hidden.json() == []
+    assert client.get(f"/api/services/{ungrouped['id']}", headers=viewer_headers).status_code == 404
+
+    granted = client.put(
+        f"/api/users/{user['id']}/services",
+        headers=admin_headers,
+        json={"service_ids": [ungrouped["id"]]},
+    )
+    assert granted.status_code == 200, granted.text
+    assert [item["id"] for item in granted.json()] == [ungrouped["id"]]
+
+    visible = client.get("/api/services", headers=viewer_headers)
+    assert visible.status_code == 200
+    assert [item["name"] for item in visible.json()] == ["ungrouped"]
+    assert client.get(f"/api/services/{ungrouped['id']}", headers=viewer_headers).status_code == 200
+    assert client.get(f"/api/services/{grouped['id']}", headers=viewer_headers).status_code == 404
+
+
+def test_group_and_direct_grants_union_without_duplicates(client, admin_headers):
+    host = create_host(client, admin_headers, name="union-host")
+    service = create_service(client, admin_headers, host["id"], name="union")
+    user, viewer_headers = create_viewer(client, admin_headers)
+
+    # Grant the same service through both paths at once.
+    client.put(
+        f"/api/users/{user['id']}/resource-groups",
+        headers=admin_headers,
+        json={"resource_group_ids": [service["resource_group_id"]]},
+    )
+    client.put(
+        f"/api/users/{user['id']}/services",
+        headers=admin_headers,
+        json={"service_ids": [service["id"]]},
+    )
+
+    listed = client.get("/api/services", headers=viewer_headers)
+    assert listed.status_code == 200
+    assert [item["id"] for item in listed.json()] == [service["id"]]
+    assert client.get(f"/api/services/{service['id']}", headers=viewer_headers).status_code == 200
+
+
+def test_revoking_direct_grant_hides_ungrouped_service_again(client, admin_headers):
+    host = create_host(client, admin_headers, name="revoke-host")
+    service = create_ungrouped_service(client, admin_headers, host["id"], name="revoke")
+    user, viewer_headers = create_viewer(client, admin_headers)
+    client.put(
+        f"/api/users/{user['id']}/services",
+        headers=admin_headers,
+        json={"service_ids": [service["id"]]},
+    )
+    assert len(client.get("/api/services", headers=viewer_headers).json()) == 1
+
+    revoked = client.put(
+        f"/api/users/{user['id']}/services",
+        headers=admin_headers,
+        json={"service_ids": []},
+    )
+
+    assert revoked.status_code == 200
+    assert revoked.json() == []
+    assert client.get("/api/services", headers=viewer_headers).json() == []
+
+
+def test_service_grants_reject_unknown_service_and_user(client, admin_headers):
+    user, _ = create_viewer(client, admin_headers)
+
+    unknown_service = client.put(
+        f"/api/users/{user['id']}/services",
+        headers=admin_headers,
+        json={"service_ids": [9999]},
+    )
+    assert unknown_service.status_code == 400
+    assert unknown_service.json()["detail"] == "包含不存在的服务"
+
+    unknown_user = client.put(
+        "/api/users/9999/services",
+        headers=admin_headers,
+        json={"service_ids": []},
+    )
+    assert unknown_user.status_code == 404
+
+
+def test_service_grant_endpoints_require_admin(client, admin_headers):
+    user, viewer_headers = create_viewer(client, admin_headers)
+
+    assert client.get(f"/api/users/{user['id']}/services", headers=viewer_headers).status_code == 403
+    assert client.put(
+        f"/api/users/{user['id']}/services",
+        headers=viewer_headers,
+        json={"service_ids": []},
+    ).status_code == 403
