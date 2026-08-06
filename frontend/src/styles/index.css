@@ -1,5 +1,7 @@
 /* Single stylesheet entry point. Import order is significant: tokens must
-   resolve before any consumer, and features override ui primitives. */
+   resolve before any consumer, and features override ui primitives.
+   Tailwind preflight stays disabled in tailwind.config.js because base.css
+   already owns the reset; only the utility layer is pulled in here. */
 
 @import './tokens.css';
 @import './base.css';
@@ -7,3 +9,6 @@
 @import './ui.css';
 @import './features.css';
 @import './service-detail.css';
+
+@tailwind components;
+@tailwind utilities;

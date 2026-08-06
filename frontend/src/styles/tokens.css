@@ -1,4 +1,6 @@
-/* Design tokens. Components must only consume semantic tokens, never raw palette steps. */
+/* Design tokens. Components must only consume semantic tokens, never raw palette steps.
+   Palette and elevation scales mirror the sub2api console: teal primary, slate
+   neutrals, and a class-based dark theme toggled by `.dark` on <html>. */
 
 :root {
   color-scheme: light;
@@ -17,39 +19,41 @@
   --slate-900: #0f172a;
   --slate-950: #020617;
 
-  --azure-50: #eff6ff;
-  --azure-100: #dbeafe;
-  --azure-200: #bfdbfe;
-  --azure-300: #93c5fd;
-  --azure-400: #60a5fa;
-  --azure-500: #3b82f6;
-  --azure-600: #2563eb;
-  --azure-700: #1d4ed8;
-  --azure-800: #1e40af;
-  --azure-950: #172554;
+  --teal-50: #f0fdfa;
+  --teal-100: #ccfbf1;
+  --teal-200: #99f6e4;
+  --teal-300: #5eead4;
+  --teal-400: #2dd4bf;
+  --teal-500: #14b8a6;
+  --teal-600: #0d9488;
+  --teal-700: #0f766e;
+  --teal-800: #115e59;
+  --teal-900: #134e4a;
+  --teal-950: #042f2e;
 
   --emerald-50: #ecfdf5;
   --emerald-200: #a7f3d0;
-  --emerald-300: #6ee7b7;
+  --emerald-400: #34d399;
+  --emerald-500: #10b981;
   --emerald-700: #047857;
   --emerald-800: #065f46;
-  --emerald-950: #022c22;
 
   --amber-50: #fffbeb;
   --amber-200: #fde68a;
+  --amber-400: #fbbf24;
   --amber-800: #92400e;
-  --amber-950: #451a03;
 
   --red-50: #fef2f2;
   --red-200: #fecaca;
-  --red-300: #fca5a5;
+  --red-400: #f87171;
+  --red-500: #ef4444;
   --red-700: #b91c1c;
   --red-800: #991b1b;
-  --red-950: #450a0a;
 
   /* Typography */
-  --font-sans: 'IBM Plex Sans', 'Noto Sans CJK SC', 'PingFang SC', sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, 'JetBrains Mono', Menlo, Consolas, monospace;
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
   --text-xs: 12px;
   --text-sm: 14px;
@@ -62,9 +66,10 @@
   --weight-normal: 400;
   --weight-medium: 500;
   --weight-semibold: 600;
+  --weight-bold: 700;
 
   --tracking-tight: 0;
-  --tracking-wide: 0;
+  --tracking-wide: 0.05em;
 
   /* Spacing */
   --space-1: 4px;
@@ -78,11 +83,12 @@
   --space-12: 48px;
   --space-16: 64px;
 
-  --radius-xs: 6px;
-  --radius-sm: 8px;
-  --radius-md: var(--radius-sm);
-  --radius-lg: var(--radius-sm);
-  --radius-xl: var(--radius-sm);
+  /* Radii follow the reference console's rounded-lg / xl / 2xl scale. */
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 16px;
   --radius-full: 999px;
 
   --z-sticky: 100;
@@ -91,60 +97,52 @@
   --z-modal: 400;
   --z-toast: 500;
 
-  --duration-fast: 120ms;
-  --duration-normal: 180ms;
-  --duration-slow: 280ms;
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
 
-  --control-height: 38px;
-  --control-height-sm: 32px;
+  --control-height: 40px;
+  --control-height-sm: 34px;
   --sidebar-width: 272px;
   --content-max: 1440px;
 
   /* Semantic: surfaces */
-  --color-primary: #2563eb;
-  --color-secondary: #047857;
-  --color-neutral-50: #f8f9fa;
-  --color-neutral-100: #f3f4f6;
-  --color-neutral-200: #e5e7eb;
-  --color-neutral-500: #6b7280;
-  --color-neutral-900: #111827;
-  --color-success: #047857;
-  --color-warning: #92400e;
-  --color-error: #b91c1c;
-
-  --bg-canvas: var(--color-neutral-100);
+  --bg-canvas: var(--slate-50);
   --bg-surface: var(--white);
   --bg-elevated: var(--white);
-  --bg-inset: var(--color-neutral-50);
-  --bg-hover: var(--color-neutral-100);
-  --bg-active: var(--color-neutral-200);
-  --bg-scrim: rgba(15, 23, 42, 0.45);
+  --bg-inset: var(--slate-50);
+  --bg-hover: var(--slate-100);
+  --bg-active: var(--slate-200);
+  --bg-scrim: rgba(2, 6, 23, 0.5);
 
   /* Semantic: foreground */
-  --fg-primary: var(--color-neutral-900);
-  --fg-secondary: var(--color-neutral-500);
-  --fg-muted: var(--color-neutral-500);
-  --fg-disabled: #9ca3af;
+  --fg-primary: var(--slate-900);
+  --fg-secondary: var(--slate-700);
+  --fg-muted: var(--slate-500);
+  --fg-disabled: var(--slate-400);
   --fg-inverse: var(--white);
 
   /* Semantic: borders */
-  --border-subtle: var(--color-neutral-200);
-  --border-strong: #d1d5db;
-  --border-focus: var(--azure-500);
+  --border-subtle: var(--slate-200);
+  --border-strong: var(--slate-300);
+  --border-focus: var(--teal-500);
 
   /* Semantic: accent */
-  --accent-fg: var(--azure-700);
-  --accent-bg: var(--azure-50);
-  --accent-border: var(--azure-200);
-  --accent-solid: var(--azure-600);
-  --accent-solid-hover: var(--azure-700);
+  --accent-fg: var(--teal-700);
+  --accent-bg: var(--teal-50);
+  --accent-border: var(--teal-200);
+  --accent-solid: var(--teal-500);
+  --accent-solid-hover: var(--teal-600);
+  --accent-gradient: linear-gradient(135deg, var(--teal-500) 0%, var(--teal-600) 100%);
+  --accent-gradient-hover: linear-gradient(135deg, var(--teal-600) 0%, var(--teal-700) 100%);
   --accent-on-solid: var(--white);
-  --accent-ring: rgba(37, 99, 235, 0.25);
+  --accent-ring: rgba(20, 184, 166, 0.3);
+  --accent-glow: 0 4px 14px rgba(20, 184, 166, 0.25);
 
   /* Semantic: status */
-  --success-fg: var(--emerald-800);
+  --success-fg: var(--emerald-700);
   --success-bg: var(--emerald-50);
   --success-border: var(--emerald-200);
   --warning-fg: var(--amber-800);
@@ -153,20 +151,73 @@
   --danger-fg: var(--red-700);
   --danger-bg: var(--red-50);
   --danger-border: var(--red-200);
-  --danger-ring: rgba(185, 28, 28, 0.2);
+  --danger-gradient: linear-gradient(135deg, var(--red-500) 0%, #dc2626 100%);
+  --danger-ring: rgba(239, 68, 68, 0.25);
 
-  --status-online-fg: var(--emerald-800);
+  --status-online-fg: var(--emerald-700);
   --status-online-bg: var(--emerald-50);
-  --status-online-dot: #10b981;
+  --status-online-dot: var(--emerald-500);
   --status-offline-fg: var(--red-700);
   --status-offline-bg: var(--red-50);
-  --status-offline-dot: #ef4444;
+  --status-offline-dot: var(--red-500);
   --status-unknown-fg: var(--slate-600);
   --status-unknown-bg: var(--slate-100);
   --status-unknown-dot: var(--slate-400);
 
-  --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
   --shadow-sm: var(--shadow-xs);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
-  --shadow-lg: var(--shadow-md);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.08);
+  --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.08);
+}
+
+/* Dark theme. Toggled by `.dark` on <html> so it matches Tailwind's
+   `darkMode: 'class'` strategy and stays in sync with utility classes. */
+.dark {
+  color-scheme: dark;
+
+  --bg-canvas: var(--slate-950);
+  --bg-surface: var(--slate-800);
+  --bg-elevated: var(--slate-800);
+  --bg-inset: rgba(30, 41, 59, 0.5);
+  --bg-hover: var(--slate-700);
+  --bg-active: var(--slate-600);
+  --bg-scrim: rgba(0, 0, 0, 0.6);
+
+  --fg-primary: var(--slate-100);
+  --fg-secondary: var(--slate-300);
+  --fg-muted: var(--slate-400);
+  --fg-disabled: var(--slate-500);
+  --fg-inverse: var(--slate-950);
+
+  --border-subtle: var(--slate-700);
+  --border-strong: var(--slate-600);
+
+  --accent-fg: var(--teal-400);
+  --accent-bg: rgba(19, 78, 74, 0.3);
+  --accent-border: var(--teal-800);
+  --accent-ring: rgba(20, 184, 166, 0.35);
+
+  --success-fg: var(--emerald-400);
+  --success-bg: rgba(6, 95, 70, 0.3);
+  --success-border: var(--emerald-800);
+  --warning-fg: var(--amber-400);
+  --warning-bg: rgba(146, 64, 14, 0.3);
+  --warning-border: var(--amber-800);
+  --danger-fg: var(--red-400);
+  --danger-bg: rgba(153, 27, 27, 0.3);
+  --danger-border: var(--red-800);
+
+  --status-online-fg: var(--emerald-400);
+  --status-online-bg: rgba(6, 95, 70, 0.3);
+  --status-offline-fg: var(--red-400);
+  --status-offline-bg: rgba(153, 27, 27, 0.3);
+  --status-unknown-fg: var(--slate-300);
+  --status-unknown-bg: var(--slate-700);
+
+  --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-sm: var(--shadow-xs);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.45);
+  --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.4);
 }

@@ -26,6 +26,11 @@
   opacity: 0.5;
 }
 
+/* Presses inward on click; suppressed while disabled so the control reads as inert. */
+.ui-button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
 .ui-button[data-size='sm'] {
   height: var(--control-height-sm);
   padding: 0 var(--space-3);
@@ -39,15 +44,15 @@
 }
 
 .ui-button[data-variant='primary'] {
-  background: var(--accent-solid);
-  border-color: var(--accent-solid);
+  background: var(--accent-gradient);
+  border-color: transparent;
   color: var(--accent-on-solid);
-  box-shadow: var(--shadow-xs);
+  box-shadow: var(--accent-glow);
 }
 
 .ui-button[data-variant='primary']:hover:not(:disabled) {
-  background: var(--accent-solid-hover);
-  border-color: var(--accent-solid-hover);
+  background: var(--accent-gradient-hover);
+  box-shadow: 0 6px 20px rgba(20, 184, 166, 0.35);
 }
 
 .ui-button[data-variant='secondary'] {
@@ -208,8 +213,11 @@
 .ui-card {
   overflow: hidden;
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-lg);
   background: var(--bg-surface);
+  box-shadow: var(--shadow-xs);
+  transition: border-color var(--duration-slow) var(--ease-standard),
+    box-shadow var(--duration-slow) var(--ease-standard);
 }
 
 /* --- Stats --- */
@@ -224,10 +232,20 @@
 .stat-card {
   display: grid;
   gap: var(--space-2);
-  padding: var(--space-4) var(--space-5);
+  padding: var(--space-5);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-lg);
   background: var(--bg-surface);
+  box-shadow: var(--shadow-xs);
+  transition: transform var(--duration-slow) var(--ease-standard),
+    border-color var(--duration-slow) var(--ease-standard),
+    box-shadow var(--duration-slow) var(--ease-standard);
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-lg);
 }
 
 .stat-card-head {
@@ -240,7 +258,7 @@
 
 .stat-card strong {
   font-size: var(--text-2xl);
-  font-weight: var(--weight-semibold);
+  font-weight: var(--weight-bold);
   letter-spacing: var(--tracking-tight);
   line-height: 1.1;
   font-variant-numeric: tabular-nums;
@@ -263,6 +281,13 @@
 .table-scroll {
   overflow-x: auto;
   border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+}
+
+/* A table inside a card already sits on a bordered surface. */
+.ui-card > .table-scroll {
+  border: 0;
+  border-radius: 0;
 }
 
 .ui-table {
