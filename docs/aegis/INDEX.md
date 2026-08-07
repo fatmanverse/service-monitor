@@ -1,16 +1,21 @@
 # Index
 
-- [服务监控设计规格](specs/2026-08-03-service-monitor-design.md)
-- [服务监控实施计划](plans/2026-08-03-service-monitor.md)
-- [资源组与健康规则工作记录](work/2026-08-03-resource-groups-health-rules/10-intent.md)
-- [多飞书告警设计规格](specs/2026-08-03-multi-feishu-alerts.md)
-- [多飞书告警实施计划](plans/2026-08-03-multi-feishu-alerts.md)
-- [主动注册 Agent 设计规格](specs/2026-08-04-agent-design.md)
-- [Agent 执行模式、身份与离线自治 ADR](adr/2026-08-04-agent-execution-and-identity.md)
-- [主动注册 Agent 实施计划](plans/2026-08-04-agent.md)
-- [主动注册 Agent 工作记录](work/2026-08-04-agent/10-intent.md)
-- [服务详情、监控生命周期与直接启动设计规格](specs/2026-08-05-service-console-lifecycle-design.md)
-- [服务详情、监控生命周期与直接启动实施计划](plans/2026-08-05-service-console-lifecycle.md)
-- [服务控制台生命周期工作记录](work/2026-08-05-service-console-lifecycle/10-intent.md)
-- [服务监控生命周期与实例 CA ADR](adr/2026-08-05-service-lifecycle-and-instance-ca.md)
-- [服务控制台生命周期实施反思](work/2026-08-05-service-console-lifecycle/99-reflection.md)
+## 设计规格
+
+- [一体化运维平台设计规格](specs/2026-08-07-platform-design.md)
+
+## 架构决策记录
+
+- [任务调度与恰好一次语义](adr/2026-08-07-task-scheduling.md)
+- [Agent 双通道模型](adr/2026-08-07-agent-dual-channel.md)
+- [自研会话代理的决策与风险](adr/2026-08-07-bastion-self-build.md)
+- [拓扑数据来源](adr/2026-08-07-topology-data-source.md)
+
+## 实施计划
+
+- [一体化运维平台实施计划](plans/2026-08-07-platform-foundation.md)
+
+## 治理
+
+- [文档规范](README.md)
+- [基线治理](BASELINE-GOVERNANCE.md)
