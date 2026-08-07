@@ -68,20 +68,7 @@ export function LoginPage({ onLogin }: { onLogin: (user: User) => void }) {
           <strong>将故障发现和恢复动作放在同一个控制面。</strong>
           <p>并发执行进程、systemd 与 HTTP 探活，按嵌套在线规则判定服务状态，掉线后自动拉起并通知飞书。</p>
         </div>
-        <dl className="login-aside-metrics">
-          <div>
-            <dt>支持主机</dt>
-            <dd>200 台</dd>
-          </div>
-          <div>
-            <dt>支持服务</dt>
-            <dd>1000 个</dd>
-          </div>
-          <div>
-            <dt>最小探活周期</dt>
-            <dd>60 秒</dd>
-          </div>
-        </dl>
+
       </aside>
     </main>
   )
