@@ -1,6 +1,6 @@
 /* Design tokens. Components must only consume semantic tokens, never raw palette steps.
-   Palette and elevation scales mirror the sub2api console: teal primary, slate
-   neutrals, and a class-based dark theme toggled by `.dark` on <html>. */
+   Palette and elevation scales mirror the sub2api console: teal primary and
+   slate neutrals, resolved for a single light theme. */
 
 :root {
   color-scheme: light;
@@ -171,53 +171,3 @@
   --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.08);
 }
 
-/* Dark theme. Toggled by `.dark` on <html> so it matches Tailwind's
-   `darkMode: 'class'` strategy and stays in sync with utility classes. */
-.dark {
-  color-scheme: dark;
-
-  --bg-canvas: var(--slate-950);
-  --bg-surface: var(--slate-800);
-  --bg-elevated: var(--slate-800);
-  --bg-inset: rgba(30, 41, 59, 0.5);
-  --bg-hover: var(--slate-700);
-  --bg-active: var(--slate-600);
-  --bg-scrim: rgba(0, 0, 0, 0.6);
-
-  --fg-primary: var(--slate-100);
-  --fg-secondary: var(--slate-300);
-  --fg-muted: var(--slate-400);
-  --fg-disabled: var(--slate-500);
-  --fg-inverse: var(--slate-950);
-
-  --border-subtle: var(--slate-700);
-  --border-strong: var(--slate-600);
-
-  --accent-fg: var(--teal-400);
-  --accent-bg: rgba(19, 78, 74, 0.3);
-  --accent-border: var(--teal-800);
-  --accent-ring: rgba(20, 184, 166, 0.35);
-
-  --success-fg: var(--emerald-400);
-  --success-bg: rgba(6, 95, 70, 0.3);
-  --success-border: var(--emerald-800);
-  --warning-fg: var(--amber-400);
-  --warning-bg: rgba(146, 64, 14, 0.3);
-  --warning-border: var(--amber-800);
-  --danger-fg: var(--red-400);
-  --danger-bg: rgba(153, 27, 27, 0.3);
-  --danger-border: var(--red-800);
-
-  --status-online-fg: var(--emerald-400);
-  --status-online-bg: rgba(6, 95, 70, 0.3);
-  --status-offline-fg: var(--red-400);
-  --status-offline-bg: rgba(153, 27, 27, 0.3);
-  --status-unknown-fg: var(--slate-300);
-  --status-unknown-bg: var(--slate-700);
-
-  --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --shadow-sm: var(--shadow-xs);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.35);
-  --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.45);
-  --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.4);
-}

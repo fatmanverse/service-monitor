@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
-import { LogOut, Menu, Moon, ShieldCheck, Sun, X } from 'lucide-react'
-import { useTheme } from '../hooks/useTheme'
+import { LogOut, Menu, ShieldCheck, X } from 'lucide-react'
 import { Button } from '../ui/Button'
 import {
   NAVIGATION_GROUPS,
@@ -20,7 +19,6 @@ interface AppShellProps {
 
 export function AppShell({ user, section, onNavigate, onLogout, children }: AppShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const { theme, toggleTheme } = useTheme()
   const navigation = visibleNavigation(user.is_admin)
 
   // Close the mobile drawer whenever the route changes.
@@ -118,15 +116,6 @@ export function AppShell({ user, section, onNavigate, onLogout, children }: AppS
           </span>
           <h2 className="topbar-title">{sectionLabel(section)}</h2>
           <div className="topbar-spacer" />
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleTheme}
-            aria-label={theme === 'dark' ? '切换到浅色主题' : '切换到深色主题'}
-            title={theme === 'dark' ? '切换到浅色主题' : '切换到深色主题'}
-          >
-            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-          </Button>
         </header>
         <main className="content">{children}</main>
       </div>

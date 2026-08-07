@@ -1,12 +1,12 @@
 /**
  * Design scales mirrored from the sub2api console so both products share one
- * visual language: teal primary, slate-based neutrals, class-based dark mode.
+ * visual language: teal primary and slate-based neutrals. The console is
+ * light-only, so no dark variant is generated.
  *
  * @type {import('tailwindcss').Config}
  */
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
-  darkMode: 'class',
   // The project ships its own reset in styles/base.css; Preflight would fight it.
   corePlugins: { preflight: false },
   theme: {
@@ -26,19 +26,6 @@ export default {
           950: '#042f2e',
         },
         accent: {
-          50: '#f8fafc',
-          100: '#f1f5f9',
-          200: '#e2e8f0',
-          300: '#cbd5e1',
-          400: '#94a3b8',
-          500: '#64748b',
-          600: '#475569',
-          700: '#334155',
-          800: '#1e293b',
-          900: '#0f172a',
-          950: '#020617',
-        },
-        dark: {
           50: '#f8fafc',
           100: '#f1f5f9',
           200: '#e2e8f0',

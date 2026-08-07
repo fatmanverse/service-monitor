@@ -5,20 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#ffffff" />
     <title>服务监控中心</title>
-    <script>
-      // Applied before first paint so a dark-theme reload never flashes light.
-      ;(function () {
-        try {
-          var saved = localStorage.getItem('service-monitor-theme')
-          var dark =
-            saved === 'dark' ||
-            (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)
-          document.documentElement.classList.toggle('dark', dark)
-        } catch (error) {
-          /* Private browsing can deny storage access; light stays the default. */
-        }
-      })()
-    </script>
   </head>
   <body>
     <div id="root"></div>
