@@ -119,6 +119,10 @@
   font-size: var(--text-xs);
 }
 
+.ui-field-hint[data-tone='danger'] {
+  color: var(--danger-fg);
+}
+
 .ui-input,
 .ui-textarea {
   width: 100%;
@@ -152,6 +156,17 @@
 .ui-textarea:focus {
   border-color: var(--border-focus);
   box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+.ui-input[aria-invalid='true'],
+.ui-textarea[aria-invalid='true'] {
+  border-color: var(--danger-border);
+}
+
+.ui-input[aria-invalid='true']:focus,
+.ui-textarea[aria-invalid='true']:focus {
+  border-color: var(--danger-fg);
+  box-shadow: 0 0 0 3px var(--danger-ring);
 }
 
 /* --- Select --- */

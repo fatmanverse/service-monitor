@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { BellRing, Pencil, Plus, Send, Trash2 } from 'lucide-react'
 import { api, errorMessage } from '../api'
+import { validateAlertForm, type AlertFormField, type FieldErrors } from '../lib/validation'
 import type { AlertConfig } from '../types'
 import { Tag } from '../ui/Badge'
 import { Button } from '../ui/Button'
@@ -22,6 +23,7 @@ export function AlertsPage() {
   const [editing, setEditing] = useState<AlertConfig | null>(null)
   const [form, setForm] = useState<AlertForm>(blankForm())
   const [modalOpen, setModalOpen] = useState(false)
+  const [formErrors, setFormErrors] = useState<FieldErrors<AlertFormField>>({})
   const [message, setMessage] = useState('')
   const [busyId, setBusyId] = useState<number | null>(null)
 
@@ -36,18 +38,23 @@ export function AlertsPage() {
   function openCreate() {
     setEditing(null)
     setForm(blankForm())
+    setFormErrors({})
     setModalOpen(true)
   }
 
   function openEdit(config: AlertConfig) {
     setEditing(config)
     setForm({ name: config.name, webhook_url: '', enabled: config.enabled })
+    setFormErrors({})
     setModalOpen(true)
   }
 
   async function save(event: React.FormEvent) {
     event.preventDefault()
     setMessage('')
+    const nextErrors = validateAlertForm(form, editing == null)
+    setFormErrors(nextErrors)
+    if (Object.keys(nextErrors).length > 0) return
     try {
       const payload = {
         name: form.name,
@@ -160,23 +167,22 @@ export function AlertsPage() {
             </>
           )}
         >
-          <form id={FORM_ID} className="form-grid" onSubmit={save}>
+          <form id={FORM_ID} className="form-grid" onSubmit={save} noValidate>
             <TextField
               label="告警名称"
               value={form.name}
               wide
+              error={formErrors.name}
               onChange={(event) => setForm({ ...form, name: event.target.value })}
-              required
             />
             <TextField
               label="Webhook 地址"
-              type="url"
               value={form.webhook_url}
               wide
+              error={formErrors.webhook_url}
               hint={editing?.webhook_configured ? '留空将保留原地址。' : undefined}
               placeholder={editing?.webhook_configured ? '已配置，留空保留' : 'https://open.feishu.cn/open-apis/bot/v2/hook/...'}
               onChange={(event) => setForm({ ...form, webhook_url: event.target.value })}
-              required={!editing}
             />
             <CheckboxField
               label="启用告警"

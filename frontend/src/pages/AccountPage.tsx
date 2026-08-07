@@ -2,6 +2,12 @@ import { useState } from 'react'
 import { KeyRound, ShieldCheck } from 'lucide-react'
 import { api, errorMessage } from '../api'
 import type { User } from '../types'
+import {
+  PASSWORD_MIN_LENGTH,
+  validatePasswordChange,
+  type FieldErrors,
+  type PasswordChangeField,
+} from '../lib/validation'
 import { Button } from '../ui/Button'
 import { PageHeader } from '../ui/Display'
 import { TextField } from '../ui/Field'
@@ -20,14 +26,18 @@ export function AccountPage({
   const [confirmPassword, setConfirmPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors<PasswordChangeField>>({})
 
   async function submit(event: React.FormEvent) {
     event.preventDefault()
     setError('')
-    if (newPassword !== confirmPassword) {
-      setError('两次输入的新密码不一致。')
-      return
-    }
+    const nextErrors = validatePasswordChange({
+      currentPassword,
+      newPassword,
+      confirmPassword,
+    })
+    setFieldErrors(nextErrors)
+    if (Object.keys(nextErrors).length > 0) return
     setBusy(true)
     try {
       await api.changePassword({
@@ -54,32 +64,33 @@ export function AccountPage({
         </section>
         <section className="account-panel">
           <header><KeyRound size={19} /><div><h2>修改密码</h2><p>修改成功后需要使用新密码重新登录。</p></div></header>
-          <form id={FORM_ID} onSubmit={submit} className="account-form">
+          {/* noValidate: messages come from validatePasswordChange so they are
+              styled with the rest of the console instead of the browser's bubble. */}
+          <form id={FORM_ID} onSubmit={submit} className="account-form" noValidate>
             <TextField
               label="当前密码"
               type="password"
               autoComplete="current-password"
               value={currentPassword}
+              error={fieldErrors.currentPassword}
               onChange={(event) => setCurrentPassword(event.target.value)}
-              required
             />
             <TextField
               label="新密码"
               type="password"
               autoComplete="new-password"
               value={newPassword}
+              error={fieldErrors.newPassword}
+              hint={`至少 ${PASSWORD_MIN_LENGTH} 个字符。`}
               onChange={(event) => setNewPassword(event.target.value)}
-              minLength={8}
-              required
             />
             <TextField
               label="确认新密码"
               type="password"
               autoComplete="new-password"
               value={confirmPassword}
+              error={fieldErrors.confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
-              minLength={8}
-              required
             />
             {error && <div className="form-error" role="alert">{error}</div>}
             <Button type="submit" variant="primary" loading={busy}>更新密码</Button>

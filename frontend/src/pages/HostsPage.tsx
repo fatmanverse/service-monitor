@@ -3,6 +3,11 @@ import { Activity, CheckCircle2, Pencil, Plus, Server, Trash2, XCircle } from 'l
 import { api, errorMessage } from '../api'
 import { AlertTargetPicker } from '../components/AlertTargetPicker'
 import { formatDateTime } from '../lib/format'
+import {
+  validateHostForm,
+  type FieldErrors,
+  type HostFormField,
+} from '../lib/validation'
 import type { AlertConfig, Host } from '../types'
 import { StatusBadge } from '../ui/Badge'
 import { Button } from '../ui/Button'
@@ -61,6 +66,7 @@ export function HostsPage() {
   const [editing, setEditing] = useState<Host | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [form, setForm] = useState<HostForm>(blankForm())
+  const [formErrors, setFormErrors] = useState<FieldErrors<HostFormField>>({})
   const [message, setMessage] = useState('')
   const [busyId, setBusyId] = useState<number | null>(null)
 
@@ -78,12 +84,14 @@ export function HostsPage() {
   function openCreate() {
     setEditing(null)
     setForm(blankForm())
+    setFormErrors({})
     setModalOpen(true)
   }
 
   function openEdit(host: Host) {
     setEditing(host)
     setForm(hostForm(host))
+    setFormErrors({})
     setModalOpen(true)
   }
 
@@ -99,7 +107,12 @@ export function HostsPage() {
   async function save(event: React.FormEvent) {
     event.preventDefault()
     setMessage('')
-    const payload = editing?.execution_mode === 'agent'
+    const isAgent = editing?.execution_mode === 'agent'
+    const passwordRequired = !editing || editing.auth_type !== 'password'
+    const nextErrors = validateHostForm({ ...form, isAgent, passwordRequired })
+    setFormErrors(nextErrors)
+    if (Object.keys(nextErrors).length > 0) return
+    const payload = isAgent
       ? {
           name: form.name,
           check_interval: Number(form.check_interval),
@@ -258,12 +271,12 @@ export function HostsPage() {
             </>
           )}
         >
-          <form id={FORM_ID} className="form-grid" onSubmit={save}>
+          <form id={FORM_ID} className="form-grid" onSubmit={save} noValidate>
             <TextField
               label="节点名称"
               value={form.name}
+              error={formErrors.name}
               onChange={(event) => setForm({ ...form, name: event.target.value })}
-              required
             />
             {editing?.execution_mode === 'agent' ? (
               <div className="form-grid-wide agent-host-notice">
@@ -272,9 +285,9 @@ export function HostsPage() {
               </div>
             ) : (
               <>
-                <TextField label="主机地址" value={form.hostname} onChange={(event) => setForm({ ...form, hostname: event.target.value })} required />
-                <TextField label="SSH 端口" type="number" min="1" max="65535" value={form.port} onChange={(event) => setForm({ ...form, port: event.target.value })} required />
-                <TextField label="SSH 用户" value={form.username} onChange={(event) => setForm({ ...form, username: event.target.value })} required />
+                <TextField label="主机地址" value={form.hostname} error={formErrors.hostname} onChange={(event) => setForm({ ...form, hostname: event.target.value })} />
+                <TextField label="SSH 端口" type="number" value={form.port} error={formErrors.port} onChange={(event) => setForm({ ...form, port: event.target.value })} />
+                <TextField label="SSH 用户" value={form.username} error={formErrors.username} onChange={(event) => setForm({ ...form, username: event.target.value })} />
                 <SelectField label="认证方式" value={form.auth_type} onChange={(event) => setForm({ ...form, auth_type: event.target.value as HostForm['auth_type'] })}>
                   <option value="password">密码</option>
                   <option value="key">私钥路径</option>
@@ -284,17 +297,17 @@ export function HostsPage() {
                     label="SSH 密码"
                     type="password"
                     value={form.password}
+                    error={formErrors.password}
                     placeholder={editing && !passwordRequired ? '留空保留原密码' : undefined}
                     onChange={(event) => setForm({ ...form, password: event.target.value })}
-                    required={passwordRequired}
                   />
                 ) : (
                   <TextField
                     label="服务器私钥路径"
                     value={form.private_key_path}
+                    error={formErrors.private_key_path}
                     placeholder="/home/monitor/.ssh/id_ed25519"
                     onChange={(event) => setForm({ ...form, private_key_path: event.target.value })}
-                    required
                   />
                 )}
               </>
@@ -311,10 +324,10 @@ export function HostsPage() {
               <TextField
                 label="探活间隔（秒）"
                 type="number"
-                min="60"
                 value={form.check_interval}
+                error={formErrors.check_interval}
+                hint="60 到 86400 秒。"
                 onChange={(event) => setForm({ ...form, check_interval: event.target.value })}
-                required
               />
             )}
             <AlertTargetPicker

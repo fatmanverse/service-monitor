@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { KeyRound, Plus, Trash2, Users } from 'lucide-react'
 import { api, errorMessage } from '../api'
 import { formatDateTime } from '../lib/format'
+import { validateUserForm, type FieldErrors, type UserFormField } from '../lib/validation'
 import type { ResourceGroup, Service, User } from '../types'
 import { Tag } from '../ui/Badge'
 import { Button } from '../ui/Button'
@@ -21,6 +22,7 @@ export function UsersPage({ currentUserId }: { currentUserId: number }) {
   const [selected, setSelected] = useState<number[]>([])
   const [selectedServices, setSelectedServices] = useState<number[]>([])
   const [form, setForm] = useState({ username: '', password: '', is_admin: false })
+  const [formErrors, setFormErrors] = useState<FieldErrors<UserFormField>>({})
   const [message, setMessage] = useState('')
 
   async function load() {
@@ -38,12 +40,22 @@ export function UsersPage({ currentUserId }: { currentUserId: number }) {
     load().catch((error) => setMessage(errorMessage(error)))
   }, [])
 
+  function openCreate() {
+    setForm({ username: '', password: '', is_admin: false })
+    setFormErrors({})
+    setCreateOpen(true)
+  }
+
   async function create(event: React.FormEvent) {
     event.preventDefault()
+    const nextErrors = validateUserForm(form)
+    setFormErrors(nextErrors)
+    if (Object.keys(nextErrors).length > 0) return
     try {
       await api.createUser({ ...form, is_active: true })
       setCreateOpen(false)
       setForm({ username: '', password: '', is_admin: false })
+      setFormErrors({})
       await load()
     } catch (error) {
       setMessage(errorMessage(error))
@@ -94,7 +106,7 @@ export function UsersPage({ currentUserId }: { currentUserId: number }) {
         title="用户管理"
         description="管理员创建账号，按资源组或单个服务分配可见范围。"
         actions={(
-          <Button variant="primary" icon={<Plus size={16} />} onClick={() => setCreateOpen(true)}>
+          <Button variant="primary" icon={<Plus size={16} />} onClick={openCreate}>
             新增用户
           </Button>
         )}
@@ -178,19 +190,19 @@ export function UsersPage({ currentUserId }: { currentUserId: number }) {
             <TextField
               label="用户名"
               value={form.username}
-              minLength={3}
+              error={formErrors.username}
+              hint="3 到 64 个字符。"
               autoComplete="username"
               onChange={(event) => setForm({ ...form, username: event.target.value })}
-              required
             />
             <TextField
               label="密码"
               type="password"
               value={form.password}
-              minLength={8}
+              error={formErrors.password}
+              hint="至少 8 个字符。"
               autoComplete="new-password"
               onChange={(event) => setForm({ ...form, password: event.target.value })}
-              required
             />
             <CheckboxField
               label="设为管理员"

@@ -36,13 +36,12 @@ export function LoginPage({ onLogin }: { onLogin: (user: User) => void }) {
           </div>
           <h1>服务监控中心</h1>
           <p>统一管理节点、探活策略、故障拉起与服务告警。</p>
-          <form className="login-form" onSubmit={submit}>
+          <form className="login-form" onSubmit={submit} noValidate>
             <TextField
               label="用户名"
               value={username}
               autoComplete="username"
               onChange={(event) => setUsername(event.target.value)}
-              required
             />
             <TextField
               label="密码"
@@ -50,7 +49,6 @@ export function LoginPage({ onLogin }: { onLogin: (user: User) => void }) {
               value={password}
               autoComplete="current-password"
               onChange={(event) => setPassword(event.target.value)}
-              required
             />
             {error && (
               <div className="form-error" role="alert">
