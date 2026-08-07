@@ -120,7 +120,6 @@
 }
 
 .ui-input,
-.ui-select,
 .ui-textarea {
   width: 100%;
   min-height: var(--control-height);
@@ -150,18 +149,171 @@
 }
 
 .ui-input:focus,
-.ui-select:focus,
 .ui-textarea:focus {
   border-color: var(--border-focus);
   box-shadow: 0 0 0 3px var(--accent-ring);
 }
 
-.ui-select {
-  appearance: none;
-  padding-right: var(--space-8);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right var(--space-3) center;
+/* --- Select --- */
+
+.ui-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: var(--control-height);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xs);
+  background: var(--bg-surface);
+  color: var(--fg-primary);
+  font-size: var(--text-md);
+  text-align: left;
+  outline: none;
+  transition: border-color var(--duration-fast) var(--ease-standard),
+    background-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+.ui-select-trigger:hover:not(:disabled) {
+  border-color: var(--border-focus);
+  background: var(--bg-hover);
+}
+
+.ui-select-trigger:focus-visible,
+.ui-select-trigger[aria-expanded='true'] {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+.ui-select-trigger[aria-invalid='true'] {
+  border-color: var(--danger-border);
+}
+
+.ui-select-trigger:disabled {
+  color: var(--fg-disabled);
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* Empty selection reads as helper text, not as a value. */
+.ui-select-trigger[data-placeholder] .ui-select-value {
+  color: var(--fg-disabled);
+}
+
+.ui-select-value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-select-chevron {
+  flex: 0 0 auto;
+  color: var(--fg-muted);
+  transition: transform var(--duration-normal) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+}
+
+.ui-select-trigger[aria-expanded='true'] .ui-select-chevron {
+  color: var(--accent-fg);
+  transform: rotate(180deg);
+}
+
+/* Portalled to <body> with fixed coordinates so a scrollable or clipping
+   ancestor — a modal body, for instance — cannot cut the panel off. */
+.ui-select-panel {
+  position: fixed;
+  z-index: var(--z-toast);
+  display: grid;
+  gap: 2px;
+  overflow-y: auto;
+  padding: var(--space-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-lg);
+  animation: select-panel-in var(--duration-fast) var(--ease-out);
+}
+
+/* Opening upward: grow from the bottom edge so the panel appears to unfold out
+   of the trigger rather than dropping onto it. */
+.ui-select-panel[data-placement='top'] {
+  align-content: end;
+  animation-name: select-panel-in-up;
+}
+
+@keyframes select-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+
+@keyframes select-panel-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+}
+
+.ui-select-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: var(--control-height-sm);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-xs);
+  color: var(--fg-secondary);
+  font-size: var(--text-md);
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+}
+
+.ui-select-option[data-active] {
+  background: var(--bg-hover);
+  color: var(--fg-primary);
+}
+
+.ui-select-option[aria-selected='true'] {
+  color: var(--accent-fg);
+  font-weight: var(--weight-medium);
+}
+
+.ui-select-option[aria-selected='true'][data-active] {
+  background: var(--accent-bg);
+}
+
+.ui-select-option[aria-selected='true'] > svg {
+  flex: 0 0 auto;
+  color: var(--accent-solid);
+}
+
+.ui-select-option[data-disabled] {
+  color: var(--fg-disabled);
+  cursor: not-allowed;
+}
+
+.ui-select-option[data-disabled][data-active] {
+  background: transparent;
+}
+
+.ui-select-option-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-select-empty {
+  padding: var(--space-3);
+  color: var(--fg-muted);
+  font-size: var(--text-sm);
+  text-align: center;
 }
 
 .ui-checkbox {
@@ -600,6 +752,10 @@
   width: min(480px, 100%);
 }
 
+.ui-modal[data-size='lg'] {
+  width: min(960px, 100%);
+}
+
 @keyframes modal-fade {
   from {
     opacity: 0;
@@ -659,6 +815,7 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-4);
+  align-items: start;
 }
 
 .form-grid-wide {

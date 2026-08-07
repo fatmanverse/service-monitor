@@ -1,5 +1,6 @@
 import { GitBranch, Plus, Trash2 } from 'lucide-react'
 import { Button } from '../../ui/Button'
+import { Select } from '../../ui/Select'
 import { isLeaf, type RuleGroup, type RuleProbe } from './healthRule'
 import type { HealthRule } from '../../types'
 
@@ -42,8 +43,7 @@ function RuleLeafNode({
   return (
     <div className="rule-node rule-leaf">
       <GitBranch size={16} aria-hidden />
-      <select
-        className="ui-select"
+      <Select
         value={rule.probe}
         aria-label="选择探活项"
         onChange={(event) => onChange({ probe: event.target.value })}
@@ -53,7 +53,7 @@ function RuleLeafNode({
             {probe.name}
           </option>
         ))}
-      </select>
+      </Select>
       <Button
         variant="ghost"
         size="sm"
@@ -108,15 +108,14 @@ function RuleGroupNode({
   return (
     <div className="rule-node rule-group">
       <div className="rule-toolbar">
-        <select
-          className="ui-select"
+        <Select
           value={rule.op}
           aria-label="组合方式"
           onChange={(event) => onChange({ ...rule, op: event.target.value as RuleGroup['op'] })}
         >
           <option value="AND">全部满足 AND</option>
           <option value="OR">任一满足 OR</option>
-        </select>
+        </Select>
         <Button variant="ghost" size="sm" icon={<Plus size={15} />} onClick={addLeaf}>
           探活项
         </Button>

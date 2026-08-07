@@ -275,6 +275,7 @@ export function ServicesPage({
       {modalOpen && (
         <Modal
           title={editing ? `编辑服务 · ${editing.name}` : '新增服务监测'}
+          size="lg"
           onClose={() => setModalOpen(false)}
           footer={(
             <>
@@ -523,8 +524,10 @@ function ProbeEditor({
               label="Headers JSON"
               value={probe.headers}
               error={error('headers')}
+              hint='可直接在此写认证头，例如 {"Authorization": "Bearer token123"}'
               wide
               mono
+              placeholder={'{\n  "Authorization": "Bearer <token>"\n}'}
               onChange={(event) => onChange({ headers: event.target.value })}
             />
             {probe.probe_type === 'post' && (
@@ -538,8 +541,9 @@ function ProbeEditor({
               />
             )}
             <SelectField
-              label="认证"
+              label="认证（快捷填充）"
               value={probe.auth_type}
+              hint="选择后自动填充认证密钥；也可忽略此项，在上方 Headers 中手动写 Authorization 头。"
               onChange={(event) => onChange({ auth_type: event.target.value as Probe['auth_type'] })}
             >
               <option value="none">无需认证</option>

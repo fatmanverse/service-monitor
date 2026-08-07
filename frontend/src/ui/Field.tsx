@@ -1,17 +1,19 @@
 import { useId } from 'react'
-import type {
-  InputHTMLAttributes,
-  ReactNode,
-  SelectHTMLAttributes,
-  TextareaHTMLAttributes,
-} from 'react'
+import { Select } from './Select'
+import type { SelectProps } from './Select'
+import type { InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from 'react'
 
 interface FieldShellProps {
   label: string
   hint?: string
   error?: string
   wide?: boolean
-  children: (props: { id: string; describedBy?: string; invalid: boolean }) => ReactNode
+  children: (props: {
+    id: string
+    labelId: string
+    describedBy?: string
+    invalid: boolean
+  }) => ReactNode
 }
 
 /**
@@ -21,15 +23,21 @@ interface FieldShellProps {
  */
 function FieldShell({ label, hint, error, wide, children }: FieldShellProps) {
   const id = useId()
+  const labelId = `${id}-label`
   const messageId = `${id}-message`
   const message = error ?? hint
 
   return (
     <div className={wide ? 'ui-field form-grid-wide' : 'ui-field'}>
-      <label className="ui-field-label" htmlFor={id}>
+      <label className="ui-field-label" id={labelId} htmlFor={id}>
         {label}
       </label>
-      {children({ id, describedBy: message ? messageId : undefined, invalid: Boolean(error) })}
+      {children({
+        id,
+        labelId,
+        describedBy: message ? messageId : undefined,
+        invalid: Boolean(error),
+      })}
       {message && (
         <span
           className="ui-field-hint"
@@ -69,21 +77,25 @@ export function TextField({ label, hint, error, wide, ...rest }: InputProps) {
   )
 }
 
-type SelectProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, 'className' | 'id'> & CommonProps
+type SelectFieldProps = Omit<
+  SelectProps,
+  'id' | 'aria-describedby' | 'aria-invalid' | 'aria-labelledby'
+> &
+  CommonProps
 
-export function SelectField({ label, hint, error, wide, children, ...rest }: SelectProps) {
+export function SelectField({ label, hint, error, wide, children, ...rest }: SelectFieldProps) {
   return (
     <FieldShell label={label} hint={hint} error={error} wide={wide}>
-      {({ id, describedBy, invalid }) => (
-        <select
+      {({ id, labelId, describedBy, invalid }) => (
+        <Select
           {...rest}
           id={id}
-          className="ui-select"
+          aria-labelledby={labelId}
           aria-describedby={describedBy}
-          aria-invalid={invalid || undefined}
+          aria-invalid={invalid}
         >
           {children}
-        </select>
+        </Select>
       )}
     </FieldShell>
   )

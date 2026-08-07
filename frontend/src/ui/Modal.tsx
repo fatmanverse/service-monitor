@@ -9,7 +9,7 @@ const FOCUSABLE =
 interface ModalProps {
   title: string
   description?: string
-  size?: 'md' | 'sm'
+  size?: 'sm' | 'md' | 'lg'
   /** Blocks Escape and backdrop dismissal while a request is in flight. */
   busy?: boolean
   onClose: () => void
