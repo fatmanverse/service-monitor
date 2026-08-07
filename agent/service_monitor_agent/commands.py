@@ -4,6 +4,8 @@ import time
 from dataclasses import dataclass
 from typing import Callable, Optional
 
+from . import subprocesses
+
 
 @dataclass(frozen=True)
 class CommandResult:
@@ -29,7 +31,7 @@ def build_start_argv(start_command: str, start_user: Optional[str]) -> list:
 
 def execute_start_command(
     service: dict,
-    runner: Callable = subprocess.run,
+    runner: Callable = subprocesses.run,
     timeout_seconds: int = 30,
 ) -> CommandResult:
     start_command = service.get("start_command")

@@ -9,6 +9,8 @@ from typing import Callable, Optional
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
+from . import subprocesses
+
 
 SYSTEMD_UNIT_CHARS = frozenset(
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@_.:-"
@@ -41,7 +43,7 @@ def parse_systemd_unit(pattern: str) -> Optional[str]:
 def probe_process(
     probe: dict,
     proc_root: str = "/proc",
-    runner: Callable = subprocess.run,
+    runner: Callable = subprocesses.run,
 ) -> ProbeResult:
     key = probe["key"]
     pattern = probe.get("process_pattern") or ""
