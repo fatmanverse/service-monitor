@@ -93,13 +93,34 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
+      # Each artifact runs on a target whose libcrypt SONAME differs from its
+      # build image's, because that mismatch is what breaks bundling: the el8
+      # image links libcrypt.so.1 while Rocky 9 ships only libcrypt.so.2, and
+      # manylinux2014 links libcrypt.so.2 while Debian ships only .so.1.
       matrix:
         include:
           - artifact: service-monitor-server-linux-x86_64-glibc217
+            platform: linux/amd64
             image: centos:7
+          - artifact: service-monitor-server-linux-x86_64-glibc217
+            platform: linux/amd64
+            image: rockylinux:9
           - artifact: service-monitor-server-linux-x86_64-glibc228
+            platform: linux/amd64
+            image: rockylinux:9
+          - artifact: service-monitor-server-linux-x86_64-glibc228
+            platform: linux/amd64
+            image: debian:12-slim
+          - artifact: service-monitor-server-linux-arm64-glibc217
+            platform: linux/arm64
+            image: ubuntu:24.04
+          - artifact: service-monitor-server-linux-arm64-glibc228
+            platform: linux/arm64
             image: rockylinux:9
     steps:
+      - uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
       - uses: actions/download-artifact@v4
         with:
           name: ${{ matrix.artifact }}
@@ -111,6 +132,7 @@ jobs:
       - name: Run target image self-test
         run: |
           docker run --rm \
+            --platform "${{ matrix.platform }}" \
             -v "$GITHUB_WORKSPACE/smoke/server:/server:ro" \
             "${{ matrix.image }}" \
             "/server/${{ matrix.artifact }}" --self-test

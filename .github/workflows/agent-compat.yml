@@ -135,12 +135,21 @@ jobs:
           - artifact: service-monitor-agent-linux-x86_64-glibc228
             platform: linux/amd64
             image: debian:12-slim
+          - artifact: service-monitor-agent-linux-x86_64-glibc217
+            platform: linux/amd64
+            image: rockylinux:9
+          - artifact: service-monitor-agent-linux-arm64-glibc217
+            platform: linux/arm64
+            image: ubuntu:24.04
           - artifact: service-monitor-agent-linux-arm64-glibc228
             platform: linux/arm64
             image: ubuntu:24.04
           - artifact: service-monitor-agent-linux-arm64-glibc228
             platform: linux/arm64
             image: debian:12-slim
+          - artifact: service-monitor-agent-linux-arm64-glibc228
+            platform: linux/arm64
+            image: rockylinux:9
     steps:
       - uses: docker/setup-qemu-action@v3
         with:
