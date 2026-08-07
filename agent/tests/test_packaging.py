@@ -1,5 +1,8 @@
+import re
 import subprocess
 from pathlib import Path
+
+import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -168,6 +171,33 @@ def test_build_scripts_use_linked_libcrypt_instead_of_artifact_name():
     assert "libcrypt_bundle_required" not in agent_build
     assert "/opt/service-monitor-python/lib" not in server_build
     assert "/opt/service-monitor-python/lib" not in agent_build
+
+
+@pytest.mark.parametrize("script", ["backend/packaging/build.sh", "agent/packaging/build.sh"])
+def test_build_scripts_accumulate_every_libcrypt_add_binary_flag(tmp_path, script):
+    """Each discovered library must extend the PyInstaller argument list.
+
+    `set -- --add-binary ...` inside the loop resets the list every iteration, so
+    only the last library survives. Both interpreters we ship link a single
+    libcrypt today, which hides the bug until one links two.
+    """
+    loop = re.search(
+        r"for LIBCRYPT_PATH in \$LIBCRYPT_PATHS; do\n(.*?)\n\s*done",
+        (ROOT.parent / script).read_text(),
+        re.DOTALL,
+    )
+    assert loop, f"{script} no longer loops over LIBCRYPT_PATHS"
+
+    harness = tmp_path / "harness.sh"
+    harness.write_text(
+        "#!/bin/sh\nset -eu\nset --\n"
+        'LIBCRYPT_PATHS="/lib64/libcrypt.so.1 /lib64/libcrypt.so.2"\n'
+        f"for LIBCRYPT_PATH in $LIBCRYPT_PATHS; do\n{loop.group(1)}\n done\n"
+        'printf "%s\\n" "$#"\n'
+    )
+    result = subprocess.run(["sh", str(harness)], check=True, capture_output=True, text=True)
+
+    assert result.stdout.strip() == "4", "every --add-binary flag pair must be preserved"
 
 
 def test_rejects_missing_pyinstaller_runtime_library(tmp_path):

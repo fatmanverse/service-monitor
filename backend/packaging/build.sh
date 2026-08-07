@@ -38,7 +38,7 @@ set --
 if [ "$(uname -s)" = Linux ]; then
     LIBCRYPT_PATHS=$(find_python_libcrypt_dependencies "$PYTHON_SHARED_LIBRARY" "$PYTHON_STDLIB_DIR/lib-dynload")
     for LIBCRYPT_PATH in $LIBCRYPT_PATHS; do
-        set -- --add-binary "$LIBCRYPT_PATH:."
+        set -- "$@" --add-binary "$LIBCRYPT_PATH:."
     done
 fi
 
