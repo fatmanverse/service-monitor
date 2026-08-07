@@ -16,11 +16,12 @@ body {
   font-family: var(--font-sans);
   font-size: var(--text-base);
   font-weight: var(--weight-normal);
-  line-height: 1.55;
+  /* Inter / system-ui optical sizing: 14px reads tighter than 16px so we
+     nudge line-height up slightly to keep text blocks open. */
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-synthesis: none;
-  transition: background-color var(--duration-normal) var(--ease-standard);
 }
 
 h1,
@@ -36,6 +37,16 @@ p {
   margin: 0;
 }
 
+a {
+  color: var(--accent-fg);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 button,
 input,
 select,
@@ -48,6 +59,8 @@ button {
   cursor: pointer;
 }
 
+/* Global focus ring is the fallback. Styled components override this with a
+   ring that matches their own border treatment. */
 :focus-visible {
   outline: 2px solid var(--border-focus);
   outline-offset: 2px;
@@ -57,9 +70,10 @@ button {
   background: var(--accent-ring);
 }
 
+/* Thin, barely-there scrollbar that appears on hover. */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -67,7 +81,7 @@ button {
 }
 
 ::-webkit-scrollbar-thumb {
-  border: 3px solid transparent;
+  border: 2px solid transparent;
   border-radius: var(--radius-full);
   background: var(--border-strong);
   background-clip: content-box;

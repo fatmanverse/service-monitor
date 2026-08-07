@@ -1,4 +1,5 @@
 import { useId } from 'react'
+import { AlertCircle } from 'lucide-react'
 import { Select } from './Select'
 import type { SelectProps } from './Select'
 import type { InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from 'react'
@@ -45,6 +46,8 @@ function FieldShell({ label, hint, error, wide, children }: FieldShellProps) {
           data-tone={error ? 'danger' : undefined}
           role={error ? 'alert' : undefined}
         >
+          {/* Errors carry an icon so the state does not rest on colour alone. */}
+          {error && <AlertCircle size={13} aria-hidden />}
           {message}
         </span>
       )}

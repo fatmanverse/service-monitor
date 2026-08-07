@@ -1,19 +1,5 @@
-/* Tailwind directives. Imported after base.css so Tailwind utilities can override the project's semantic classes. */
+/* Tailwind utilities, available for one-off layout tweaks in components.
+   Component styling itself lives in the hand-written sheets so the semantic
+   tokens stay the single source of truth. */
 
-@tailwind components;
 @tailwind utilities;
-
-@layer components {
-  /* Glass morphism effects */
-  .glass-card {
-    @apply bg-white/70 backdrop-blur-xl;
-    @apply rounded-2xl border border-white/20;
-    @apply shadow-glass transition-all duration-300;
-  }
-
-  /* Card hover lift */
-  .card-hover {
-    @apply hover:-translate-y-0.5 hover:shadow-card-hover;
-    @apply hover:border-gray-200;
-  }
-}
